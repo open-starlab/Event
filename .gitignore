@@ -3,3 +3,5 @@ test/
 event/sports/soccer/utils/test_f1.py
 event/sports/soccer/models/run.sh
 event/sports/soccer/models/model_yaml_test
+openstarlab_event.egg-info/
+dist/

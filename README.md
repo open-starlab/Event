@@ -3,10 +3,19 @@
 [![dm](https://img.shields.io/pypi/dm/openstarlab-preprocessing)](https://pypi.org/project/openstarlab-preprocessing/)
 
 ## Introduction
-Work in Progress
+- To install this package via PyPI
+```
+pip install openstarlab-event
+```
+- To install manually
+```
+git clone git@github.com:open-starlab/Event.git
+cd ./Event
+pip install -e .
+```
 
 ## Other Information
-development torch version
+Development torch version
 ```
 version 2.4.0 linux pip python3.8 cuda12.1 
 ```
