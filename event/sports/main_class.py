@@ -24,6 +24,6 @@ if __name__ == '__main__':
     model_config = os.getcwd()+'/test/model/FMS/out/train/20240922-181450/run_1/hyperparameters.json'
     model.inference(model_path, model_config) #simple inference
     model.inference(model_path, model_config, simulation=True, random_selection=True, max_iter=20) #simulation with evaluation
-    model = event_model_soccer('FMS', os.getcwd()+'/event/sports/soccer/models/train_FMS_optuna.yaml')
+    model = Event_Model('FMS', os.getcwd()+'/event/sports/soccer/models/train_FMS_optuna.yaml')
     model.train()
     print('FMS Done')
