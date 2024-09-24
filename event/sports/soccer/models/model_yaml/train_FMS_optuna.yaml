@@ -1,0 +1,39 @@
+# OpenStarLab Event Modeling, Apache-2.0 license
+# UEID data (with openstarlab-preprocessing package) and FMS model
+
+
+# Training parameters
+train_path: /path/to/train.csv                                                            # Path to the train set
+valid_path: /path/to/valid.csv                                                            # Path to the valid set
+save_path: /path/to/save                                                                  # Path to save the training results 
+test: True                                                                                # Test the model training 
+num_epoch: 6
+print_freq: 1
+early_stop_patience: 3
+dataloader_num_worker: 4
+device: None                                                                              #when None, device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
+
+# Input features
+basic_features: ['action', 'delta_T', 'start_x','start_y'] 
+other_features: ['team','home_team','success','seconds','deltaX','deltaY','distance','dist2goal','angle2goal']
+use_other_features: True
+num_actions: 9 
+seq_len: 9
+delta_T_bin: 101
+start_x_bin: 101
+start_y_bin: 101
+
+# Model Hyperparameters (use all lists for optuna or all value for specified hyperparameters)
+optuna: True
+optuna_n_trials: 100
+
+learning_rate: [0.0002]
+eps: [1e-16]
+batch_size: [256]
+
+ninp: [50,100]
+nhead: [2,5]
+nhid: [100,500]
+nlayers: [1,4]
+dropout: [0.1,0.2]
+

@@ -1,0 +1,24 @@
+# OpenStarLab Event Modeling, Apache-2.0 license
+# UEID data (with openstarlab-preprocessing package) and MAJ model
+
+
+# Training parameters
+train_path: /path/to/train.csv                                                            # Path to the train set
+valid_path: /path/to/valid.csv                                                            # Path to the valid set
+save_path: /path/to/save                                                                  # Path to save the training results 
+test: True                                                                                # Test the model training 
+num_epoch: 1
+print_freq: 1
+dataloader_num_worker: 4
+batch_size: 256
+device: None                                                                              #when None, device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
+
+# Input features
+basic_features: ['action', 'delta_T', 'start_x','start_y'] 
+num_actions: 9 
+seq_len: 1
+delta_T_bin: 101
+start_x_bin: 101
+start_y_bin: 101
+
+

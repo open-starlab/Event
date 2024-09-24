@@ -1,0 +1,39 @@
+# OpenStarLab Event Modeling, Apache-2.0 license
+# UEID data (with openstarlab-preprocessing package) and LEM_action model
+
+
+# Training parameters
+train_path: /path/to/train.csv                                                            # Path to the train set
+valid_path: /path/to/valid.csv                                                            # Path to the valid set
+save_path: /path/to/save                                                                  # Path to save the training results 
+LEM_action_json_path: /path/to/hyperparameters.json
+LEM_aciton_pth_path: /path/to/_model_1.pth
+test: True                                                                                # Test the model training 
+num_epoch: 50
+print_freq: 1
+early_stop_patience: 5
+dataloader_num_worker: 4
+device: None                                                                              #when None, device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
+
+# Input features
+basic_features: ['action', 'delta_T', 'start_x','start_y'] 
+other_features: ['team','home_team','success','seconds','deltaX','deltaY','distance','dist2goal','angle2goal']
+use_other_features: True
+num_actions: 9 
+seq_len: 3
+delta_T_bin: 101
+start_x_bin: 101
+start_y_bin: 101
+
+# Model Hyperparameters (use all lists for optuna or all value for specified hyperparameters)
+optuna: True
+optuna_n_trials: 100
+
+learning_rate: [1e-5,1e-1] #[min,max]
+eps: [1e-16]
+batch_size: [256]
+
+hidden_layers: [1,2,3]
+hidden_size: [16, 32, 64, 128, 256] #only a list of value for the grid search is required
+activation: ['relu','sigmoid','tanh']
+

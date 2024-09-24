@@ -1,0 +1,35 @@
+# OpenStarLab Event Modeling, Apache-2.0 license
+# UEID data (with openstarlab-preprocessing package) and Seq2Event model
+
+
+# Training parameters
+train_path: /path/to/train.csv                                                            # Path to the train set
+valid_path: /path/to/valid.csv                                                            # Path to the valid set
+save_path: /path/to/save                                                                  # Path to save the training results 
+test: True                                                                                # Test the model training 
+batch_size: 256
+num_epoch: 50
+print_freq: 1
+early_stop_patience: 5
+dataloader_num_worker: 4
+device: None                                                                              #when None, device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
+
+# Input features
+basic_features: ['action', 'delta_T', 'start_x','start_y'] 
+other_features: ['team','home_team','success','seconds','deltaX','deltaY','distance','dist2goal','angle2goal']
+use_other_features: True
+num_actions: 9 
+seq_len: 40
+
+# Model Hyperparameters (use all lists for optuna or all value for specified hyperparameters)
+optuna: False
+optuna_n_trials: 100
+action_embedding_out_len: 9 #num_actions
+scale_grad_by_freq: True
+continuous_embedding_output_len: 12 #len(features)-1
+
+multihead_attention: 1 #fix to 1 given the previous papers
+hidden_dim: 1024
+transformer_num_layers: 1 
+transformer_finaldenselayer_dim: 64 #len(features)-1 + action_embedding_out_len
+

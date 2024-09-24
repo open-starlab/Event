@@ -1,0 +1,8 @@
+5baseline
+
+1 NMSTPP
+2 Seq2Event
+3 LEM w/ seq_len 1
+4 LEM w/ seq_len 3
+5 FMS
+6 majority class
