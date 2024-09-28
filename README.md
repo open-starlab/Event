@@ -25,7 +25,7 @@ pip install -e .
 
 ## Current Features
 ### Sports
-- [Event Model in Football/Soccer ⚽](https://github.com/open-starlab/PreProcessing/blob/master/preprocessing/sports/event_data/README.md)
+- [Event Model in Football/Soccer ⚽](https://openstarlab.readthedocs.io/en/latest/Event_Modeling/Sports/Soccer/index.html)
 
 ## RoadMap
 - [x] Release the package
