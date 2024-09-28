@@ -3,7 +3,7 @@ import torch.nn as nn
 import pdb
 
 def FMS_cost_function(gt, pred, weight_action_class=None, action_weight=1, deltaT_weight=1, location_weight=1, min_dict=None, max_dict=None, device="None",config=None):
-    if config is None or config =="None":
+    if config is None and config =="None":
         num_actions = 9
         num_deltaT = 101
         num_start_x = 101

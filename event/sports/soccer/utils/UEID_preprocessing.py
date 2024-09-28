@@ -43,7 +43,7 @@ def UEID_preprocessing(df, min_dict_input=None, max_dict_input=None):
 
     # Apply logarithmic transformation and min-max normalization to delta_T
     df["delta_T"] = df["delta_T"].apply(lambda x: np.log(x + 1e-6))
-    if min_dict_input is None or max_dict_input is None:
+    if min_dict_input is None and max_dict_input is None:
         min_dict["delta_T"] = df["delta_T"].min()
         max_dict["delta_T"] = df["delta_T"].max()
     else:

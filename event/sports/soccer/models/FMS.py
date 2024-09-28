@@ -113,7 +113,7 @@ def train_FMS(current_time, config, train_df, valid_df, seq_len, features, epoch
     # Preprocess the data
     train_df, min_dict, max_dict = UEID_preprocessing(train_df)
     valid_df, _, _ = UEID_preprocessing(valid_df, min_dict, max_dict)
-    
+
     # Define fixed hyperparameters 
     input_dim = len(features)-1+ ninp
     output_dim = num_actions + delta_T_bin + start_x_bin + start_y_bin
@@ -164,10 +164,16 @@ def train_FMS(current_time, config, train_df, valid_df, seq_len, features, epoch
     model_save_path = save_path + f"_model_{best_epoch}.pth"
     loss_save_path = save_path + "_loss.csv"
     hyperparameters_save_path = save_path + "hyperparameters.json"
-    flops_save_path = save_path + "_flops.txt"
+    model_stats_save_path = save_path + "_model_stats.txt"
     
+    #save the min_dict and max_dict
+    min_max_dict_path = config['save_path']+f"/out/{method}/{current_time}/min_max_dict.json"
+    with open(min_max_dict_path, 'w') as f:
+        json.dump({'min_dict':min_dict, 'max_dict':max_dict}, f, indent=4)
+
     #save all the hyperparameters values
-    hyperparameters = {'train_path': config['train_path'], 'valid_path': config['valid_path'], 'save_path': config['save_path'],
+    hyperparameters = {'current_time': current_time,
+                        'train_path': config['train_path'], 'valid_path': config['valid_path'], 'save_path': config['save_path'],
                         'test': config['test'], 'batch_size': batch_size, 'num_epoch': config['num_epoch'],
                         'print_freq': print_freq, 'early_stop_patience': config['early_stop_patience'],
                         'dataloader_num_worker': config['dataloader_num_worker'], 'device': config['device'], 
@@ -186,7 +192,7 @@ def train_FMS(current_time, config, train_df, valid_df, seq_len, features, epoch
     loss_df.to_csv(loss_save_path, index=False)
     with open(hyperparameters_save_path, 'w') as f:
         json.dump(hyperparameters, f, indent=4)
-    with open(flops_save_path, "w") as f:
+    with open(model_stats_save_path, "w") as f:
         f.write(str(flops))
         
     print("Model and loss saved at", save_path)
@@ -330,9 +336,8 @@ if __name__ == "__main__":
     import yaml
 
     prase = argparse.ArgumentParser()
-    prase.add_argument('--config_path', '-c', type=str, default=os.getcwd()+'/event/sports/soccer/models/train_FMS.yaml')
+    prase.add_argument('--config_path', '-c', type=str, default=os.getcwd()+'/event/sports/soccer/models/model_yaml_test/train_FMS.yaml')
     args = prase.parse_args()
-    
     config_path = args.config_path
 
     with open(config_path, 'r') as file:

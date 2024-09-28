@@ -4,7 +4,7 @@ import pdb
 
 def LEM_action_cost_function(gt, pred, device=None,config=None):
 
-    num_actions = config["num_actions"] if config is not None or config !="None" else 9
+    num_actions = config["num_actions"] if config is not None and config !="None" else 9
     gt_action = gt[:,0:num_actions].float()
 
     #Binary Cross Entropy Loss
@@ -42,10 +42,10 @@ def calculate_f1_score(gt_classes, pred_classes, num_classes):
     return avg_f1_score
 
 def LEM_cost_function(gt, pred,min_dict=None, max_dict=None, device="None",config=None):
-    num_actions = config["num_actions"] if config is not None or config !="None" else 9
-    num_deltaT = config["delta_T_bin"] if config is not None or config !="None" else 61
-    num_start_x = config["start_x_bin"] if config is not None or config !="None" else 101
-    num_start_y = config["start_y_bin"] if config is not None or config !="None" else 101
+    num_actions = config["num_actions"] if config is not None and config !="None" else 9
+    num_deltaT = config["delta_T_bin"] if config is not None and config !="None" else 61
+    num_start_x = config["start_x_bin"] if config is not None and config !="None" else 101
+    num_start_y = config["start_y_bin"] if config is not None and config !="None" else 101
     gt_action = gt[:,0:num_actions].float()
     gt_deltaT = gt[:,num_actions:num_actions+num_deltaT].float()
     gt_start_x = gt[:,num_actions+num_deltaT:num_actions+num_deltaT+num_start_x].float()

@@ -28,10 +28,10 @@ def MAJ_cost_function(gt, pred,min_dict=None, max_dict=None, device="None",confi
     #check if pred is in device
     if pred.device != device:
         pred = pred.to(device)
-    num_actions = config["num_actions"] if config is not None or config !="None" else 9
-    num_deltaT = config["delta_T_bin"] if config is not None or config !="None" else 61
-    num_start_x = config["start_x_bin"] if config is not None or config !="None" else 101
-    num_start_y = config["start_y_bin"] if config is not None or config !="None" else 101
+    num_actions = config["num_actions"] if config is not None and config !="None" else 9
+    num_deltaT = config["delta_T_bin"] if config is not None and config !="None" else 61
+    num_start_x = config["start_x_bin"] if config is not None and config !="None" else 101
+    num_start_y = config["start_y_bin"] if config is not None and config !="None" else 101
     gt_action = gt[:,0:num_actions].float()
     gt_deltaT = gt[:,num_actions:num_actions+num_deltaT].float()
     gt_start_x = gt[:,num_actions+num_deltaT:num_actions+num_deltaT+num_start_x].float()

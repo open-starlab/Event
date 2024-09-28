@@ -2,6 +2,8 @@ import torch
 from ..utils.UEID_preprocessing import UEID_preprocessing
 from ..dataloaders.UEID_loader import UEID_loader
 from ..dataloaders.UEID_loader import UEID_Simulation_loader
+from ..utils.LEM_cost_function import LEM_cost_function
+from ..trainers.LEM_train import one_hot_encode_from_continuous
 from torch.utils.data import DataLoader
 import json
 import pandas as pd
@@ -11,18 +13,19 @@ import os
 import pdb
 
 
-def LEM_inference(train_df, data, model_name, model_path, model_config, num_workers=4, batch_size=64, device=None):
+def LEM_inference(train_df, data, model_name, model_path, model_config, num_workers=4, batch_size=64, device=None, min_max_dict_path=None):
     # Load the training configuration 
     with open(model_config, "r") as f:
         config = json.load(f)
     
     #check if train_df and data are paths or dataframes
-    if not isinstance(train_df, pd.DataFrame):
-        #check if the train_df is a path
-        if isinstance(train_df, str):
-            train_df = pd.read_csv(train_df) if not config['test'] else pd.read_csv(train_df).head(1000)
-        else:
-            raise ValueError("train_df must be a pandas dataframe or a path to a csv file")
+    if train_df is not None and train_df != "None":
+        if not isinstance(train_df, pd.DataFrame):
+            #check if the train_df is a path
+            if isinstance(train_df, str):
+                train_df = pd.read_csv(train_df) if not config['test'] else pd.read_csv(train_df).head(1000)
+            else:
+                raise ValueError("train_df must be a pandas dataframe or a path to a csv file")
     if isinstance(data, pd.DataFrame):
         data_load = data
     elif isinstance(data, str):
@@ -41,7 +44,16 @@ def LEM_inference(train_df, data, model_name, model_path, model_config, num_work
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None or device == 'None' else device
     
     # Preprocess the data
-    train_df, min_dict, max_dict = UEID_preprocessing(train_df)
+    if model_config != "None" and model_config is not None:
+        try:
+            with open(min_max_dict_path, "r") as f:
+                min_max_dict = json.load(f)
+            min_dict = min_max_dict['min_dict']
+            max_dict = min_max_dict['max_dict']
+        except:
+            train_df, min_dict, max_dict = UEID_preprocessing(train_df)
+    else:
+        train_df, min_dict, max_dict = UEID_preprocessing(train_df)
     data, _, _ = UEID_preprocessing(data, min_dict, max_dict)
 
     # Create the data loader
@@ -55,17 +67,32 @@ def LEM_inference(train_df, data, model_name, model_path, model_config, num_work
     model.eval()
     
     # Run inference
+    total_loss = 0
+    total_loss_components = [0]*5
     with torch.no_grad():
         predicted = []
         end_idx_list = []
-        for i, (input_seq, _, end_idx) in tqdm(enumerate(data_loader)):
-            num_action=config["num_actions"] if config is not None or config !="None" else 9
+        for i, (input_seq, gt, end_idx) in tqdm(enumerate(data_loader)):
+            input_seq, gt = input_seq.to(device), gt.to(device)
+            num_action=config["num_actions"] if config is not None and config !="None" else 9
             inputs_one_hot = torch.nn.functional.one_hot(input_seq[:,:,0].long(), num_classes=num_action).float()
             input_seq = torch.cat((inputs_one_hot, input_seq[:,:,1:]), dim=2)
             batch_size = input_seq.shape[0]
             input_seq = input_seq.reshape(batch_size, -1)
-            input_seq = input_seq.to(device)
+
+            gt_action_one_hot = torch.nn.functional.one_hot(gt[:,0].long(), num_classes=num_action).float()
+            gt_deltaT_one_hot = one_hot_encode_from_continuous(gt[:,1], num_bins=config["delta_T_bin"]).float()
+            gt_start_x_one_hot = one_hot_encode_from_continuous(gt[:,2], num_bins=config["start_x_bin"]).float()
+            gt_start_y_one_hot = one_hot_encode_from_continuous(gt[:,3], num_bins=config["start_y_bin"]).float()
+            gt = torch.cat((gt_action_one_hot, gt_deltaT_one_hot, gt_start_x_one_hot, gt_start_y_one_hot), dim=1)
             output = model(input_seq)
+            #check if output is in device
+            if output.device != device:
+                output = output.to(device)
+            loss, loss_components= LEM_cost_function(gt, output,  min_dict=min_dict, max_dict=max_dict, device=device,config=config)
+            total_loss += loss.item()
+            loss_components = [i.cpu().detach().numpy() for i in loss_components] if device != "cpu" else [i.detach().numpy() for i in loss_components]
+            total_loss_components = [total_loss_components[j] + loss_components[j] for j in range(len(loss_components))]
             if device != "cpu":
                 predicted.append(output.cpu().numpy())
                 end_idx_list.append(end_idx.cpu().numpy())
@@ -75,6 +102,13 @@ def LEM_inference(train_df, data, model_name, model_path, model_config, num_work
         # Concatenate the results
         predicted = np.concatenate(predicted, axis=0)
         end_idx_list = np.concatenate(end_idx_list, axis=0)
+        average_loss = total_loss / len(data_loader)
+        average_loss_components = [total_loss_components[j] / len(data_loader) for j in range(len(loss_components))]
+
+    #save the loss_df
+    columns= ['train_loss', 'BCEL_continuous', 'MAE_deltaT', 'MAE_start_x', 'MAE_start_y']
+    loss_df = pd.DataFrame([[average_loss]+average_loss_components], columns=columns)
+    loss_df = loss_df.round(4)
         
     data_raw = data_load.copy()
 
@@ -124,20 +158,21 @@ def LEM_inference(train_df, data, model_name, model_path, model_config, num_work
     new_df = pd.DataFrame(new_data, index=end_idx_list)
     df = data_raw.join(new_df)
 
-    return df
+    return df, loss_df
 
-def LEM_simulation_possession(train_df, data, model_name, model_path, model_config, num_workers=4, batch_size=64, device=None, random_selection=False, max_iter=200):
+def LEM_simulation_possession(train_df, data, model_name, model_path, model_config, num_workers=4, batch_size=64, device=None, random_selection=False, max_iter=200, min_max_dict_path=None):
         # Load the training configuration 
     with open(model_config, "r") as f:
         config = json.load(f)
     
     #check if train_df and data are paths or dataframes
-    if not isinstance(train_df, pd.DataFrame):
-        #check if the train_df is a path
-        if isinstance(train_df, str):
-            train_df = pd.read_csv(train_df) if not config['test'] else pd.read_csv(train_df).head(1000)
-        else:
-            raise ValueError("train_df must be a pandas dataframe or a path to a csv file")
+    if train_df is not None and train_df != "None":
+        if not isinstance(train_df, pd.DataFrame):
+            #check if the train_df is a path
+            if isinstance(train_df, str):
+                train_df = pd.read_csv(train_df) if not config['test'] else pd.read_csv(train_df).head(1000)
+            else:
+                raise ValueError("train_df must be a pandas dataframe or a path to a csv file")
     if isinstance(data, pd.DataFrame):
         data_raw = data
     elif isinstance(data, str):
@@ -155,7 +190,17 @@ def LEM_simulation_possession(train_df, data, model_name, model_path, model_conf
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None or device == 'None' else device
     
     # Preprocess the data
-    train_df, min_dict, max_dict = UEID_preprocessing(train_df)
+    if model_config != "None" and model_config is not None:
+        try:
+            with open(min_max_dict_path, "r") as f:
+                min_max_dict = json.load(f)
+            min_dict = min_max_dict['min_dict']
+            max_dict = min_max_dict['max_dict']
+        except:
+            train_df, min_dict, max_dict = UEID_preprocessing(train_df)
+    else:
+        train_df, min_dict, max_dict = UEID_preprocessing(train_df)
+
     data, _, _ = UEID_preprocessing(data, min_dict, max_dict)
 
     # Create the data loader
@@ -177,7 +222,7 @@ def LEM_simulation_possession(train_df, data, model_name, model_path, model_conf
 
             for idx in end_idx:
                 simulation[idx] = []
-            num_action=config["num_actions"] if config is not None or config !="None" else 9
+            num_action=config["num_actions"] if config is not None and config !="None" else 9
             inputs_one_hot = torch.nn.functional.one_hot(input_seq[:,:,0].long(), num_classes=num_action).float()
             input_seq = torch.cat((inputs_one_hot, input_seq[:,:,1:]), dim=2)
             batch_size = input_seq.shape[0]
@@ -591,8 +636,9 @@ def ES_HOTA_cal(sim_poss,ground_truth_possession,tau_t=5,tau_l=5):
     return ES_HOTA_list
 
 if __name__ == "__main__":
-    model_path = os.getcwd()+"/test/model/LEM/out/train/20240922-230404/run_1/_model_1.pth"
-    model_config = os.getcwd()+"/test/model/LEM/out/train/20240922-230404/run_1/hyperparameters.json"
+    model_path = os.getcwd()+"/test/model/LEM/out/train/20240928_130159/run_1/_model_1.pth"
+    model_config = os.getcwd()+"/test/model/LEM/out/train/20240928_130159/run_1/hyperparameters.json"
+    min_max_dict_path = os.getcwd()+"/test/model/LEM/out/train/20240928_130159/min_max_dict.json"
 
     train_path = os.getcwd()+"/test/dataset/csv/train.csv"
     valid_path = os.getcwd()+"/test/dataset/csv/valid.csv"
@@ -600,16 +646,19 @@ if __name__ == "__main__":
     os.makedirs(save_path, exist_ok=True)
 
     #testing inference for LEM
-    # inferenced_data = LEM_inference(train_path, valid_path, "LEM", model_path, model_config)
-    # inferenced_data.to_csv(save_path+"inference.csv",index=False)
+    inferenced_data, loss_df = LEM_inference(train_path, valid_path, "LEM", model_path, model_config)
+    inferenced_data, loss_df = LEM_inference(None, valid_path, "LEM", model_path, model_config, min_max_dict_path=min_max_dict_path)
+    inferenced_data.to_csv(save_path+"inference.csv",index=False)
+    if loss_df is not None:
+        loss_df.to_csv(save_path+"loss.csv",index=False)
     # df = LEM_simulation_possession(train_path, valid_path, "LEM", model_path, model_config, random_selection=True, max_iter=20)
     # df.to_csv(save_path+"simulation.csv",index=False)
 
     # testing evaluation
-    simulation_df_path = os.getcwd()+"/test/inference/LEM/simulation.csv"
-    ground_truth_df_path = os.getcwd()+"/test/dataset/csv/valid.csv"
-    timestep_eval_df,es_hota_df = simulation_evaluation(simulation_df_path, ground_truth_df_path)
-    timestep_eval_df.to_csv(save_path+"timestep_eval.csv",index=False)
-    es_hota_df.to_csv(save_path+"ES_HOTA.csv",index=False)
+    # simulation_df_path = os.getcwd()+"/test/inference/LEM/simulation.csv"
+    # ground_truth_df_path = os.getcwd()+"/test/dataset/csv/valid.csv"
+    # timestep_eval_df,es_hota_df = simulation_evaluation(simulation_df_path, ground_truth_df_path)
+    # timestep_eval_df.to_csv(save_path+"timestep_eval.csv",index=False)
+    # es_hota_df.to_csv(save_path+"ES_HOTA.csv",index=False)
     pdb.set_trace()
     print('___________done______________')

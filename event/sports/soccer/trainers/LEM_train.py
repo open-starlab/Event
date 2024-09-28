@@ -19,7 +19,7 @@ def LEM_action_epoch_function(model, dataloader,  optimizer, device, train=True,
         inputs, gt = inputs.to(device), gt.to(device)
         
         #convert the first column of action to one hot encoding
-        num_action=config["num_actions"] if config is not None or config !="None" else 9
+        num_action=config["num_actions"] if config is not None and config !="None" else 9
         inputs_one_hot = torch.nn.functional.one_hot(inputs[:,:,0].long(), num_classes=num_action).float()
         inputs = torch.cat((inputs_one_hot, inputs[:,:,1:]), dim=2)
         batch_size = inputs.shape[0]
@@ -115,7 +115,7 @@ def LEM_action_train(model, train_loader, valid_loader, optimizer, device, epoch
         # Get a batch of data from the DataLoader and move it to the same device
         inputs, _, _ = next(iter(dataloader))
         inputs = inputs.to(device)
-        num_action=config["num_actions"] if config is not None or config !="None" else 9
+        num_action=config["num_actions"] if config is not None and config !="None" else 9
         inputs_one_hot = torch.nn.functional.one_hot(inputs[:,:,0].long(), num_classes=num_action).float()
         inputs = torch.cat((inputs_one_hot, inputs[:,:,1:]), dim=2)
         batch_size = inputs.shape[0]
@@ -158,7 +158,7 @@ def LEM_epoch_function(model, dataloader, min_dict, max_dict, optimizer, device,
     for i, (inputs, gt, _) in enumerate(dataloader):
         inputs, gt = inputs.to(device), gt.to(device)
         #convert the first column of action to one hot encoding
-        num_action=config["num_actions"] if config is not None or config !="None" else 9
+        num_action=config["num_actions"] if config is not None and config !="None" else 9
         inputs_one_hot = torch.nn.functional.one_hot(inputs[:,:,0].long(), num_classes=num_action).float()
         inputs = torch.cat((inputs_one_hot, inputs[:,:,1:]), dim=2)
         batch_size = inputs.shape[0]
@@ -269,7 +269,7 @@ def LEM_train(model, train_loader, valid_loader, min_dict, max_dict, optimizer, 
         # Get a batch of data from the DataLoader and move it to the same device
         inputs, _, _ = next(iter(dataloader))
         inputs = inputs.to(device)
-        num_action=config["num_actions"] if config is not None or config !="None" else 9
+        num_action=config["num_actions"] if config is not None and config !="None" else 9
         inputs_one_hot = torch.nn.functional.one_hot(inputs[:,:,0].long(), num_classes=num_action).float()
         inputs = torch.cat((inputs_one_hot, inputs[:,:,1:]), dim=2)
         batch_size = inputs.shape[0]

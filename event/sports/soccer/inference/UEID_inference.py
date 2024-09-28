@@ -2,6 +2,7 @@ import torch
 from ..utils.UEID_preprocessing import UEID_preprocessing
 from ..dataloaders.UEID_loader import UEID_loader
 from ..dataloaders.UEID_loader import UEID_Simulation_loader
+from ..utils.UEID_cost_function import cost_function
 from torch.utils.data import DataLoader
 import json
 import pandas as pd
@@ -11,18 +12,19 @@ import os
 import pdb
 
 
-def UEID_inference(train_df, data, model_name, model_path, model_config, num_workers=4, batch_size=64, device=None):
+def UEID_inference(train_df, data, model_name, model_path, model_config, num_workers=4, batch_size=64, device=None, min_max_dict_path=None):
     # Load the training configuration 
     with open(model_config, "r") as f:
         config = json.load(f)
     
     #check if train_df and data are paths or dataframes
-    if not isinstance(train_df, pd.DataFrame):
-        #check if the train_df is a path
-        if isinstance(train_df, str):
-            train_df = pd.read_csv(train_df) if not config['test'] else pd.read_csv(train_df).head(1000)
-        else:
-            raise ValueError("train_df must be a pandas dataframe or a path to a csv file")
+    if train_df is not None and train_df != "None":
+        if not isinstance(train_df, pd.DataFrame):
+            #check if the train_df is a path
+            if isinstance(train_df, str):
+                train_df = pd.read_csv(train_df) if not config['test'] else pd.read_csv(train_df).head(1000)
+            else:
+                raise ValueError("train_df must be a pandas dataframe or a path to a csv file")
     if isinstance(data, pd.DataFrame):
         data_raw = data
     elif isinstance(data, str):
@@ -41,7 +43,16 @@ def UEID_inference(train_df, data, model_name, model_path, model_config, num_wor
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None or device == 'None' else device
     
     # Preprocess the data
-    train_df, min_dict, max_dict = UEID_preprocessing(train_df)
+    if model_config != "None" and model_config is not None:
+        try:
+            with open(min_max_dict_path, "r") as f:
+                min_max_dict = json.load(f)
+            min_dict = min_max_dict['min_dict']
+            max_dict = min_max_dict['max_dict']
+        except:
+            train_df, min_dict, max_dict = UEID_preprocessing(train_df)
+    else:
+        train_df, min_dict, max_dict = UEID_preprocessing(train_df)
     data, _, _ = UEID_preprocessing(data, min_dict, max_dict)
 
     # Create the data loader
@@ -55,23 +66,37 @@ def UEID_inference(train_df, data, model_name, model_path, model_config, num_wor
     model.eval()
     
     # Run inference
+    total_loss = 0
+    total_loss_components = [0]*8
     with torch.no_grad():
         predicted = []
         end_idx_list = []
-        for i, (input_seq, _, end_idx) in tqdm(enumerate(data_loader)):
-            input_seq = input_seq.to(device)
+        for i, (input_seq, gt, end_idx) in tqdm(enumerate(data_loader)):
+            input_seq, gt = input_seq.to(device), gt.to(device)
             output = model(input_seq)
+            #check if output is in device
+            if output.device != device:
+                output = output.to(device)
+            loss, loss_components= cost_function(gt, output,  min_dict=min_dict, max_dict=max_dict, device=device,config=config)
+            total_loss += loss.item()
+            loss_components = [i.cpu().detach().numpy() for i in loss_components] if device != "cpu" else [i.detach().numpy() for i in loss_components]
+            total_loss_components = [total_loss_components[j] + loss_components[j] for j in range(len(loss_components))]
             if device != "cpu":
                 predicted.append(output.cpu().numpy())
                 end_idx_list.append(end_idx.cpu().numpy())
             else:
                 predicted.append(output.numpy())
                 end_idx_list.append(end_idx.numpy())
-
         # Concatenate the results
         predicted = np.concatenate(predicted, axis=0)
         end_idx_list = np.concatenate(end_idx_list, axis=0)
+        average_loss = total_loss / len(data_loader)
+        average_loss_components = [total_loss_components[j] / len(data_loader) for j in range(len(loss_components))]
         
+    #save the loss_df
+    columns= ['train_loss', 'CEL_action', 'RMSE_deltaT', 'RMSE_location', 'ACC_action', 'F1_action', 'MAE_deltaT', 'MAE_x', 'MAE_y']
+    loss_df = pd.DataFrame([[average_loss]+average_loss_components], columns=columns)
+    loss_df = loss_df.round(4)
     
     for i, idx in enumerate(end_idx_list):
         data_raw.loc[idx, 'action_pred'] = np.argmax(predicted[i, :config['num_actions']])
@@ -85,20 +110,21 @@ def UEID_inference(train_df, data, model_name, model_path, model_config, num_wor
         data_raw.loc[idx, 'start_x_pred_unscaled'] = predicted[i, config['num_actions']+1]*(max_dict["start_x"]-min_dict["start_x"]) + min_dict["start_x"]
         data_raw.loc[idx, 'start_y_pred_unscaled'] = predicted[i, config['num_actions']+2]*(max_dict["start_y"]-min_dict["start_y"]) + min_dict["start_y"]
     
-    return data_raw
+    return data_raw, loss_df
 
-def UEID_simulation_possession(train_df, data, model_name, model_path, model_config, num_workers=4, batch_size=64, device=None, random_selection=False, max_iter=200):
+def UEID_simulation_possession(train_df, data, model_name, model_path, model_config, num_workers=4, batch_size=64, device=None, random_selection=False, max_iter=200, min_max_dict_path=None):
         # Load the training configuration 
     with open(model_config, "r") as f:
         config = json.load(f)
     
     #check if train_df and data are paths or dataframes
-    if not isinstance(train_df, pd.DataFrame):
-        #check if the train_df is a path
-        if isinstance(train_df, str):
-            train_df = pd.read_csv(train_df) if not config['test'] else pd.read_csv(train_df).head(1000)
-        else:
-            raise ValueError("train_df must be a pandas dataframe or a path to a csv file")
+    if train_df is not None and train_df != "None":
+        if not isinstance(train_df, pd.DataFrame):
+            #check if the train_df is a path
+            if isinstance(train_df, str):
+                train_df = pd.read_csv(train_df) if not config['test'] else pd.read_csv(train_df).head(1000)
+            else:
+                raise ValueError("train_df must be a pandas dataframe or a path to a csv file")
     if isinstance(data, pd.DataFrame):
         data_raw = data
     elif isinstance(data, str):
@@ -116,7 +142,17 @@ def UEID_simulation_possession(train_df, data, model_name, model_path, model_con
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None or device == 'None' else device
     
     # Preprocess the data
-    train_df, min_dict, max_dict = UEID_preprocessing(train_df)
+    if model_config != "None" and model_config is not None:
+        try:
+            with open(min_max_dict_path, "r") as f:
+                min_max_dict = json.load(f)
+            min_dict = min_max_dict['min_dict']
+            max_dict = min_max_dict['max_dict']
+        except:
+            train_df, min_dict, max_dict = UEID_preprocessing(train_df)
+    else:
+        train_df, min_dict, max_dict = UEID_preprocessing(train_df)
+
     data, _, _ = UEID_preprocessing(data, min_dict, max_dict)
 
     # Create the data loader
@@ -539,12 +575,13 @@ def ES_HOTA_cal(sim_poss,ground_truth_possession,tau_t=5,tau_l=5):
     return ES_HOTA_list
 
 if __name__ == "__main__":
-    model_path_nmstpp = os.getcwd()+"/test/model/NMSTPP/out/train/20240918-210024/run_1/_model_1.pth"
-    model_config_nmstpp = os.getcwd()+"/test/model/NMSTPP/out/train/20240918-210024/run_1/hyperparameters.json"
+    model_path_nmstpp = os.getcwd()+"/test/model/NMSTPP/out/train/20240928_114738/run_1/_model_1.pth"
+    model_config_nmstpp = os.getcwd()+"/test/model/NMSTPP/out/train/20240928_114738/run_1/hyperparameters.json"
+    min_max_dict_path = os.getcwd()+"/test/model/NMSTPP/out/train/20240928_114738/min_max_dict.json"
     save_path_nmstpp = os.getcwd()+"/test/inference/nmstpp/"
 
-    model_path_seq2event = os.getcwd()+"/test/model/Seq2Event/out/train/20240918-210109/run_1/_model_1.pth"
-    model_config_seq2event = os.getcwd()+"/test/model/Seq2Event/out/train/20240918-210109/run_1/hyperparameters.json"
+    model_path_seq2event = os.getcwd()+"/test/model/Seq2Event/out/train/20240928-114748/run_1/_model_1.pth"
+    model_config_seq2event = os.getcwd()+"/test/model/Seq2Event/out/train/20240928-114748/run_1/hyperparameters.json"
     save_path_seq2event = os.getcwd()+"/test/inference/seq2event/"
 
     train_path = os.getcwd()+"/test/dataset/csv/train.csv"
@@ -554,30 +591,34 @@ if __name__ == "__main__":
     os.makedirs(save_path_nmstpp, exist_ok=True)
 
     # testing inference for NMSTPP
-    inferenced_data = UEID_inference(train_path, valid_path, "NMSTPP", model_path_nmstpp, model_config_nmstpp)
+    inferenced_data,loss_df = UEID_inference(train_path, valid_path, "NMSTPP", model_path_nmstpp, model_config_nmstpp)
+    inferenced_data,loss_df = UEID_inference(None, valid_path, "NMSTPP", model_path_nmstpp, model_config_nmstpp, min_max_dict_path=min_max_dict_path)
     inferenced_data.to_csv(save_path_nmstpp+"inference.csv",index=False)
-    df = UEID_simulation_possession(train_path, valid_path, "NMSTPP", model_path_nmstpp, model_config_nmstpp, random_selection=True, max_iter=20)
-    df.to_csv(save_path_nmstpp+"simulation.csv",index=False)
+    loss_df.to_csv(save_path_nmstpp+"loss.csv",index=False)
+    # df = UEID_simulation_possession(train_path, valid_path, "NMSTPP", model_path_nmstpp, model_config_nmstpp, random_selection=True, max_iter=20)
+    # df.to_csv(save_path_nmstpp+"simulation.csv",index=False)
 
-    # testing evaluation
-    simulation_df_path = os.getcwd()+"/test/inference/nmstpp/simulation.csv"
-    ground_truth_df_path = os.getcwd()+"/test/dataset/csv/valid.csv"
-    timestep_eval_df,es_hota_df = simulation_evaluation(simulation_df_path, ground_truth_df_path)
-    timestep_eval_df.to_csv(save_path_nmstpp+"timestep_eval.csv",index=False)
-    es_hota_df.to_csv(save_path_nmstpp+"ES_HOTA.csv",index=False)
+    # # testing evaluation
+    # simulation_df_path = os.getcwd()+"/test/inference/nmstpp/simulation.csv"
+    # ground_truth_df_path = os.getcwd()+"/test/dataset/csv/valid.csv"
+    # timestep_eval_df,es_hota_df = simulation_evaluation(simulation_df_path, ground_truth_df_path)
+    # timestep_eval_df.to_csv(save_path_nmstpp+"timestep_eval.csv",index=False)
+    # es_hota_df.to_csv(save_path_nmstpp+"ES_HOTA.csv",index=False)
 
 
     #testing inference for Seq2Event
-    inferenced_data = UEID_inference(train_path, valid_path, "Seq2Event", model_path_seq2event, model_config_seq2event)
+    inferenced_data,loss_df = UEID_inference(train_path, valid_path, "Seq2Event", model_path_seq2event, model_config_seq2event)
+    inferenced_data,loss_df = UEID_inference(None, valid_path, "Seq2Event", model_path_seq2event, model_config_seq2event, min_max_dict_path=min_max_dict_path)
     inferenced_data.to_csv(save_path_seq2event+"inference.csv",index=False)
-    df = UEID_simulation_possession(train_path, valid_path, "Seq2Event", model_path_seq2event, model_config_seq2event, random_selection=True, max_iter=20)
-    df.to_csv(save_path_seq2event+"simulation.csv",index=False)
+    loss_df.to_csv(save_path_seq2event+"loss.csv",index=False)
+    # df = UEID_simulation_possession(train_path, valid_path, "Seq2Event", model_path_seq2event, model_config_seq2event, random_selection=True, max_iter=20)
+    # df.to_csv(save_path_seq2event+"simulation.csv",index=False)
 
-    #testing evaluation
-    simulation_df_path = os.getcwd()+"/test/inference/seq2event/simulation.csv"
-    ground_truth_df_path = os.getcwd()+"/test/dataset/csv/valid.csv"
-    timestep_eval_df,es_hota_df = simulation_evaluation(simulation_df_path, ground_truth_df_path)
-    timestep_eval_df.to_csv(save_path_seq2event+"timestep_eval.csv",index=False)
-    es_hota_df.to_csv(save_path_seq2event+"ES_HOTA.csv",index=False)
+    # #testing evaluation
+    # simulation_df_path = os.getcwd()+"/test/inference/seq2event/simulation.csv"
+    # ground_truth_df_path = os.getcwd()+"/test/dataset/csv/valid.csv"
+    # timestep_eval_df,es_hota_df = simulation_evaluation(simulation_df_path, ground_truth_df_path)
+    # timestep_eval_df.to_csv(save_path_seq2event+"timestep_eval.csv",index=False)
+    # es_hota_df.to_csv(save_path_seq2event+"ES_HOTA.csv",index=False)
     # pdb.set_trace()
     print('___________done______________')

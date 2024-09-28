@@ -150,9 +150,15 @@ def train_LEM(current_time, config, train_df, valid_df, seq_len, features, epoch
     loss_save_path = save_path + "_loss.csv"
     hyperparameters_save_path = save_path + "hyperparameters.json"
     model_stats_save_path = save_path + "_model_stats.txt"
+
+    #save the min_dict and max_dict
+    min_max_dict_path = config['save_path']+f"/out/{method}/{current_time}/min_max_dict.json"
+    with open(min_max_dict_path, 'w') as f:
+        json.dump({'min_dict':min_dict, 'max_dict':max_dict}, f, indent=4)
     
     #save all the hyperparameters values
-    hyperparameters = {'train_path': config['train_path'], 'valid_path': config['valid_path'], 'save_path': config['save_path'],
+    hyperparameters = {'current_time': current_time,
+                       'train_path': config['train_path'], 'valid_path': config['valid_path'], 'save_path': config['save_path'],
                        'LEM_action_json_path': LEM_action_json_path, 'LEM_aciton_pth_path': pth_action,
                         'test': config['test'], 'batch_size': batch_size, 'num_epoch': config['num_epoch'],
                         'print_freq': print_freq, 'early_stop_patience': config['early_stop_patience'],
@@ -305,7 +311,7 @@ if __name__ == "__main__":
     import yaml
 
     prase = argparse.ArgumentParser()
-    prase.add_argument('--config_path', '-c', type=str, default=os.getcwd()+'/event/sports/soccer/models/train_LEM.yaml')
+    prase.add_argument('--config_path', '-c', type=str, default=os.getcwd()+'/event/sports/soccer/models/model_yaml_test/train_LEM.yaml')
     args = prase.parse_args()
     
     config_path = args.config_path

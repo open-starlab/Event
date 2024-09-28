@@ -63,44 +63,51 @@ class event_model_soccer:
             else:
                 raise ValueError(f'Unknown model name: {self.model_name}')
 
-    def inference(self, model_path, model_config, train_path=None, valid_path=None, save_path=None, simulation=False, random_selection=True, max_iter=20):
+    def inference(self, model_path, model_config, train_path=None, valid_path=None, save_path=None, simulation=False, random_selection=True, max_iter=20, min_max_dict_path=None):
         #read the json file
         with open(model_config, 'r') as file:
             config_json = json.load(file)
 
         #check if the paths are provided
         if train_path is None:
-            train_path = config_json['train_path']
+            if 'train_path' in config_json:
+                train_path = config_json['train_path']
+            elif min_max_dict_path is not None:
+                valid_path = self.config['valid_path']
+            else:
+                raise ValueError('train_path or min_max_dict_path must be provided')
         if valid_path is None:
             valid_path = config_json['valid_path']
         if save_path is None:
             save_path = config_json['save_path']+"/inference/"
         os.makedirs(save_path, exist_ok=True)
-
+        
         #inference function
         if simulation==False:
             if self.model_name in ['FMS', 'MAJ']:
-                inferenced_data = FMS_inference.FMS_inference(train_path, valid_path, self.model_name, model_path, model_config)
+                inferenced_data, loss_df = FMS_inference.FMS_inference(train_path, valid_path, self.model_name, model_path, model_config,min_max_dict_path=min_max_dict_path)
             elif self.model_name=='LEM':
-                inferenced_data = LEM_inference.LEM_inference(train_path, valid_path, self.model_name, model_path, model_config)
+                inferenced_data, loss_df = LEM_inference.LEM_inference(train_path, valid_path, self.model_name, model_path, model_config, min_max_dict_path=min_max_dict_path)
             elif self.model_name in ['NMSTPP', 'Seq2Event']:
-                inferenced_data = UEID_inference.UEID_inference(train_path, valid_path, self.model_name, model_path, model_config)
+                inferenced_data, loss_df = UEID_inference.UEID_inference(train_path, valid_path, self.model_name, model_path, model_config, min_max_dict_path=min_max_dict_path)
             else:
                 raise ValueError(f'Unknown model name: {self.model_name}')
             #save the inferenced data
             inferenced_data.to_csv(save_path+"inference.csv",index=False)
+            loss_df.to_csv(save_path+"loss.csv",index=False)
+            return inferenced_data, loss_df
         else:
             if self.model_name in ['FMS', 'MAJ']:
                 df = FMS_inference.FMS_simulation_possession(train_path, valid_path, self.model_name, 
-                                                             model_path, model_config, random_selection=random_selection, max_iter=max_iter)
+                                                             model_path, model_config, random_selection=random_selection, max_iter=max_iter, min_max_dict_path=min_max_dict_path)
                 timestep_eval_df,es_hota_df = FMS_inference.simulation_evaluation(df, valid_path)
             elif self.model_name == 'LEM':
                 df = LEM_inference.LEM_simulation_possession(train_path, valid_path, self.model_name, 
-                                                             model_path, model_config, random_selection=random_selection, max_iter=max_iter)
+                                                             model_path, model_config, random_selection=random_selection, max_iter=max_iter, min_max_dict_path=min_max_dict_path)
                 timestep_eval_df,es_hota_df = LEM_inference.simulation_evaluation(df, valid_path)
             elif self.model_name in ['NMSTPP', 'Seq2Event']:
                 df = UEID_inference.UEID_simulation_possession(train_path, valid_path, self.model_name, 
-                                                             model_path, model_config, random_selection=random_selection, max_iter=max_iter)
+                                                             model_path, model_config, random_selection=random_selection, max_iter=max_iter, min_max_dict_path=min_max_dict_path)
                 timestep_eval_df,es_hota_df = UEID_inference.simulation_evaluation(df, valid_path)
             else:
                 raise ValueError(f'Unknown model name: {self.model_name}')
@@ -108,6 +115,8 @@ class event_model_soccer:
             df.to_csv(save_path+"simulation.csv",index=False)
             timestep_eval_df.to_csv(save_path+"timestep_eval.csv",index=False)
             es_hota_df.to_csv(save_path+"ES_HOTA.csv",index=False)
+            return df, timestep_eval_df, es_hota_df
+
 
 if __name__ == '__main__':
     # #Test FMS
@@ -171,4 +180,16 @@ if __name__ == '__main__':
     # model = event_model_soccer('Seq2Event', os.getcwd()+'/event/sports/soccer/models/train_Seq2Event_optuna.yaml')
     # model.train()
     # print('Seq2Event Done')
+
+    #Test inference FMS
+    # model = event_model_soccer('FMS', os.getcwd()+'/event/sports/soccer/models/model_yaml_test/train_FMS_inference.yaml')
+    # # model.train()
+    # #Example only, run the inference function after training
+    # model_path = os.getcwd()+'/test/model/FMS/out/train/20240928_114700/run_2/_model_1.pth'
+    # model_config = os.getcwd()+'/test/model/FMS/out/train/20240928_114700/run_2/hyperparameters.json'
+    # min_max_dict_path = os.getcwd()+'/test/model/FMS/out/train/20240928_114700/min_max_dict.json'
+    # model.inference(model_path, model_config, min_max_dict_path=min_max_dict_path) #simple inference
+    # model.inference(model_path, model_config, simulation=True, random_selection=True, max_iter=20, min_max_dict_path=min_max_dict_path) #simulation with evaluation
+    # print('FMS Done')
+
     print('Done')

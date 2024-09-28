@@ -123,9 +123,15 @@ def train_MAJ(current_time, config, train_df, valid_df, seq_len, features, epoch
     model_save_path = save_path + f"_model_{best_epoch}.pth"
     loss_save_path = save_path + "_loss.csv"
     hyperparameters_save_path = save_path + "hyperparameters.json"
+
+    #save the min_dict and max_dict
+    min_max_dict_path = config['save_path']+f"/out/{method}/{current_time}/min_max_dict.json"
+    with open(min_max_dict_path, 'w') as f:
+        json.dump({'min_dict':min_dict, 'max_dict':max_dict}, f, indent=4)
     
     #save all the hyperparameters values
-    hyperparameters = {'train_path': config['train_path'], 'valid_path': config['valid_path'], 'save_path': config['save_path'],
+    hyperparameters = {'current_time': current_time,
+                       'train_path': config['train_path'], 'valid_path': config['valid_path'], 'save_path': config['save_path'],
                         'test': config['test'], 'num_epochs': epochs, 'print_freq': print_freq, 
                         'dataloader_num_worker': config['dataloader_num_worker'], 'batch_size': batch_size, 
                         'device': config['device'], 'basic_features': config['basic_features'], 'features': features,
@@ -173,7 +179,7 @@ if __name__ == "__main__":
     import yaml
 
     prase = argparse.ArgumentParser()
-    prase.add_argument('--config_path', '-c', type=str, default=os.getcwd()+'/event/sports/soccer/models/train_MAJ.yaml')
+    prase.add_argument('--config_path', '-c', type=str, default=os.getcwd()+'/event/sports/soccer/models/model_yaml_test/train_MAJ.yaml')
     args = prase.parse_args()
     
     config_path = args.config_path

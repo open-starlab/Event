@@ -172,9 +172,15 @@ def train_Seq2Event(current_time, config, train_df, valid_df, seq_len, features,
     loss_save_path = save_path + "_loss.csv"
     hyperparameters_save_path = save_path + "hyperparameters.json"
     flops_save_path = save_path + "_flops.txt"
+
+    #save the min_dict and max_dict
+    min_max_dict_path = config['save_path']+f"/out/{method}/{current_time}/min_max_dict.json"
+    with open(min_max_dict_path, 'w') as f:
+        json.dump({'min_dict':min_dict, 'max_dict':max_dict}, f, indent=4)
     
     #save all the hyperparameters values
-    hyperparameters = {'train_path': config['train_path'], 'valid_path': config['valid_path'], 'save_path': config['save_path'],
+    hyperparameters = {'current_time': current_time,
+                       'train_path': config['train_path'], 'valid_path': config['valid_path'], 'save_path': config['save_path'],
                         'test': config['test'], 'batch_size': batch_size, 'num_epoch': config['num_epoch'],
                         'print_freq': print_freq, 'early_stop_patience': config['early_stop_patience'],
                         'dataloader_num_worker': config['dataloader_num_worker'], 'device': config['device'], 
@@ -242,7 +248,7 @@ def main(config):
     transformer_num_layers = config['transformer_num_layers']
     transformer_finaldenselayer_dim = config['transformer_finaldenselayer_dim']
 
-    current_time = time.strftime("%Y%m%d-%H%M%S")
+    current_time = time.strftime("%Y%m%d_%H%M%S")
     train_Seq2Event(current_time, config, train_path, valid_path, seq_len, features, epochs, batch_size,
                 action_embedding_out_len, scale_grad_by_freq, 
                 continuous_embedding_output_len,
@@ -335,7 +341,7 @@ if __name__ == "__main__":
     import yaml
 
     prase = argparse.ArgumentParser()
-    prase.add_argument('--config_path', '-c', type=str, default=os.getcwd()+'/event/sports/soccer/models/train_Seq2Event.yaml')
+    prase.add_argument('--config_path', '-c', type=str, default=os.getcwd()+'/event/sports/soccer/models/model_yaml_test/train_Seq2Event.yaml')
     args = prase.parse_args()
     
     config_path = args.config_path
