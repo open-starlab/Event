@@ -40,6 +40,8 @@ def UEID_preprocessing(df, min_dict_input=None, max_dict_input=None):
     # Apply min-max normalization
     for feature in ["seconds", "start_x", "start_y", "deltaX", "deltaY", "distance", "dist2goal", "angle2goal"]:
         df[feature] = (df[feature] - min_dict[feature]) / (max_dict[feature] - min_dict[feature])
+        #ensure the values are between 0 and 1
+        df[feature] = df[feature].apply(lambda x: 0 if x < 0 else 1 if x > 1 else x)
 
     # Apply logarithmic transformation and min-max normalization to delta_T
     df["delta_T"] = df["delta_T"].apply(lambda x: np.log(x + 1e-6))
@@ -51,6 +53,8 @@ def UEID_preprocessing(df, min_dict_input=None, max_dict_input=None):
         max_dict["delta_T"] = max_dict_input["delta_T"]
         
     df["delta_T"] = (df["delta_T"] - min_dict["delta_T"]) / (max_dict["delta_T"] - min_dict["delta_T"])
+    #ensure the values are between 0 and 1
+    df["delta_T"] = df["delta_T"].apply(lambda x: 0 if x < 0 else 1 if x > 1 else x)
     
     return df, min_dict, max_dict
 

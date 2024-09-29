@@ -29,14 +29,16 @@ def FMS_epoch_function(model, dataloader, min_dict, max_dict, optimizer, device,
     total_batches = len(dataloader)
     
     for i, (inputs, gt, _) in enumerate(dataloader):
+        
         inputs, gt = inputs.to(device), gt.to(device)
         
         optimizer.zero_grad() if train else None
 
         # Forward pass
         outputs = model(inputs)
+    
         loss, loss_components= FMS_cost_function(gt, outputs,  min_dict=min_dict, max_dict=max_dict, device=device,config=config)
-        
+
         if train:
             # Backward pass and optimization
             loss.backward()
