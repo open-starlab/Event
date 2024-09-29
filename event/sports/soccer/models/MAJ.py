@@ -161,7 +161,7 @@ def main(config):
         features = config['basic_features']
     else:
         seq_len = config['seq_len']
-        epochs = config['epochs']
+        epochs = config['num_epoch']
         features = config['basic_features']
     
     batch_size = config['batch_size']

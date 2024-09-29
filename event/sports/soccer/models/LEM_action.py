@@ -172,7 +172,7 @@ def main(config):
         features = config['basic_features']+config['other_features']
     else:
         seq_len = config['seq_len']
-        epochs = config['epochs']
+        epochs = config['num_epoch']
         if config['use_other_features']:
             features = config['basic_features']+config['other_features']
         else:
@@ -210,7 +210,7 @@ def main_optuna(config):
         features = config['basic_features']+config['other_features']
     else:
         seq_len = config['seq_len']
-        epochs = config['epochs']
+        epochs = config['num_epoch']
         if config['use_other_features']:
             features = config['basic_features']+config['other_features']
         else:
