@@ -46,6 +46,7 @@ class NMSTPP(nn.Module):
         self.linear_action = nn.Linear(self.NN_action_dim, action_output_len) #9
     
     def forward(self, X):
+
         #input features 
         X_action=X[:,:,0]
         X_continuous=X[:,:,1:]
@@ -53,8 +54,9 @@ class NMSTPP(nn.Module):
         #embedding
         X_action = self.action_embedding(X_action.int())
         X_continuous= self.continuous_embedding(X_continuous.float())
+        # print(X_continuous)
         X_concatenate = torch.cat((X_action,X_continuous),2).float()
-
+        # print(X_concatenate)
         #positional encoding
         X_positional = X_concatenate+ self.positional_encoding(X_concatenate)
         X_positional=X_positional.float()
@@ -84,7 +86,6 @@ class NMSTPP(nn.Module):
 
         #output
         out=torch.cat((action_pred,deltaT_pred,location_pred),1)
-        
         return out
     
 class PositionalEncoding(nn.Module):

@@ -17,7 +17,10 @@ def UEID_preprocessing(df, min_dict_input=None, max_dict_input=None):
                    'long_pass': 5, 'shot': 6, 'dribble': 7}
 
     # Map the team and action columns to integers
-    df["team"] = df["team"].map(team_dict)
+    df["team_map"] = df["team"].copy().map(team_dict) 
+    if df["team_map"].isnull().sum() == 0:
+        df["team"] = df["team_map"]
+    df.drop(columns=["team_map"], inplace=True)
     df["action"] = df["action"].map(action_dict)
 
     #if action is 6 and success is 1, then change action to 8

@@ -33,6 +33,10 @@ class UEID_loader(Dataset):
         input_seq = self.df.loc[start_idx:end_idx-1, self.features].values
         target_seq = self.df.loc[end_idx, self.target_features].values
         
+        #convert the value to float
+        input_seq = input_seq.astype(float)
+        target_seq = target_seq.astype(float)
+
         # Convert to torch tensors
         input_seq = torch.tensor(input_seq, dtype=torch.float32)
         target_seq = torch.tensor(target_seq, dtype=torch.float32)
