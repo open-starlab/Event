@@ -97,6 +97,7 @@ def train(model, train_loader, valid_loader, min_dict, max_dict, optimizer, devi
 
     best_valid_loss = float('inf')
     epochs_no_improve = 0
+    best_epoch = 0
 
     for epoch in range(epochs):
         torch.cuda.empty_cache(); import gc; gc.collect()

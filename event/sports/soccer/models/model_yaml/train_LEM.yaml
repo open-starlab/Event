@@ -17,7 +17,7 @@ device: None                                                                    
 
 # Input features
 basic_features: ['action', 'delta_T', 'start_x','start_y'] 
-other_features: ['team','home_team','success','seconds','deltaX','deltaY','distance','dist2goal','angle2goal']
+other_features: ['team','home_team','success','seconds','deltaX','deltaY','distance','dist2goal','angle2goal','home_score','away_score']
 use_other_features: True
 num_actions: 9 
 seq_len: 3

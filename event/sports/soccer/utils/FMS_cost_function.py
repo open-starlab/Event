@@ -13,7 +13,6 @@ def FMS_cost_function(gt, pred, weight_action_class=None, action_weight=1, delta
         num_deltaT = config["delta_T_bin"]
         num_start_x = config["start_x_bin"]
         num_start_y = config["start_y_bin"]
-
     action = gt[:,0].long()
     deltaT = gt[:,1].float()
     start_x = gt[:,2].float()

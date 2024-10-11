@@ -167,7 +167,7 @@ def main(config):
 
     # Extract input dimensions from train_df
     if config['test']:
-        seq_len = 3
+        seq_len = config['seq_len']
         epochs = 2
         features = config['basic_features']+config['other_features']
     else:
@@ -205,7 +205,7 @@ def main_optuna(config):
 
     # Extract input dimensions from train_df
     if config['test']:
-        seq_len = 1
+        seq_len = config['seq_len']
         epochs = 2
         features = config['basic_features']+config['other_features']
     else:

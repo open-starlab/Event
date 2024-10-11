@@ -264,7 +264,7 @@ def main_optuna(config):
     if config['test']:
         seq_len = 10
         epochs = 2
-        features = config['basic_features']
+        features = config['basic_features']+config['other_features']
     else:
         seq_len = config['seq_len']
         epochs = config['num_epoch']
@@ -310,7 +310,7 @@ def main_optuna(config):
     study = optuna.create_study(direction='minimize')
     
     # Optimize the objective function
-    current_time = time.strftime("%Y%m%d-%H%M%S")
+    current_time = time.strftime("%Y%m%d_%H%M%S")
     study.optimize(objective, n_trials=n_trials)
     
     # Print the best trial results

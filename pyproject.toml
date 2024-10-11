@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openstarlab_event"
-version = "0.1.7"
+version = "0.1.8"
 description = "openstarlab event modeliing package"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -22,7 +22,10 @@ dependencies = [
     "pandas>=1.3.0",
     "numpy>=1.21.0",
     "torchprofile",
-    "optuna"
+    "optuna",
+    "matplotlib",
+    "matplotsoccer",
+    "scipy",
 ]
 
 license = { text = "Apache License 2.0" }

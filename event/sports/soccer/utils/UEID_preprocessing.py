@@ -21,7 +21,7 @@ def UEID_preprocessing(df, min_dict_input=None, max_dict_input=None):
     df["action"] = df["action"].map(action_dict)
 
     #if action is 6 and success is 1, then change action to 8
-    df.loc[(df["action"] == 6) & (df["success"] == 1), "action"] = 8
+    df.loc[(df["action"] == 6) & (df["goal"] == 1), "action"] = 8
 
     # Initialize min and max dictionaries
     if min_dict_input is None or max_dict_input is None:
@@ -29,19 +29,25 @@ def UEID_preprocessing(df, min_dict_input=None, max_dict_input=None):
         max_dict = {}
         
         # Calculate minimums and maximums for min-max normalization
-        features_to_normalize = ["seconds", "start_x", "start_y", "deltaX", "deltaY", "distance", "dist2goal", "angle2goal"]
+        features_to_normalize = ["seconds", "start_x", "start_y", "deltaX", "deltaY", "distance", "dist2goal", "angle2goal",'home_score','away_score']
         for feature in features_to_normalize:
-            min_dict[feature] = df[feature].min()
-            max_dict[feature] = df[feature].max()
+            min_dict[feature] = float(df[feature].min())
+            max_dict[feature] = float(df[feature].max())
     else:
         min_dict = min_dict_input
         max_dict = max_dict_input
 
+    
+
     # Apply min-max normalization
-    for feature in ["seconds", "start_x", "start_y", "deltaX", "deltaY", "distance", "dist2goal", "angle2goal"]:
-        df[feature] = (df[feature] - min_dict[feature]) / (max_dict[feature] - min_dict[feature])
+    for feature in ["seconds", "start_x", "start_y", "deltaX", "deltaY", "distance", "dist2goal", "angle2goal",'home_score','away_score']:
+        if max_dict[feature] - min_dict[feature] != 0:
+            df[feature] = (df[feature] - min_dict[feature]) / (max_dict[feature] - min_dict[feature])
+        else:
+            df[feature] = 0
         #ensure the values are between 0 and 1
         df[feature] = df[feature].apply(lambda x: 0 if x < 0 else 1 if x > 1 else x)
+
 
     # Apply logarithmic transformation and min-max normalization to delta_T
     df["delta_T"] = df["delta_T"].apply(lambda x: np.log(x + 1e-6))
