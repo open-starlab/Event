@@ -222,7 +222,7 @@ def UEID_simulation_possession(train_df, data, model_name, model_path, model_con
                 if not mask.any():
                     break  # Exit the loop if all sequences are finished
                 
-                print(f"Iteration: {iteration}") if config['test'] else None
+                print(f"Iteration: {iteration}") if config['test'] and __name__ == "__main__" else None 
                 if iteration >= max_iter:
                     break
                 else:
@@ -470,6 +470,7 @@ def UEID_simulation_match(train_df, data, model_name, model_path, model_config, 
     match_simulation_data = []
     simulation_period = 1 if simulation_time >= 45 else 2
     simulation_minute = 90 - simulation_time 
+    # pdb.set_trace()
     for match_id in match_ids:
         match_data = data[data['match_id'] == match_id]
         team_list = match_data['team'].unique().tolist()
@@ -537,6 +538,16 @@ def UEID_simulation_match(train_df, data, model_name, model_path, model_config, 
                     start_y_j = output_j[4]*(max_dict["start_y"]-min_dict["start_y"]) + min_dict["start_y"]
                     home_score_j = input_seq[j, -1,config['features'].index('home_score')] if 'home_score' in config['features'] else None
                     away_score_j = input_seq[j, -1, config['features'].index('away_score')] if 'away_score' in config['features'] else None
+                    team_j = input_seq[j, -1, config['features'].index('team')] if 'team' in config['features'] else None
+                    action_last_j = input_seq[j, -1, 0]
+                    if team_j is not None:
+                        if action_last_j == 3:
+                            temp_team_j = team_list.copy()
+                            temp_team_j.remove(team_j)
+                            team_j = temp_team_j[0]
+                        else:
+                            team_j = team_j.cpu().numpy() if device != "cpu" else team_j.numpy()
+                            team_j = int(team_j)
                     if home_score_j is not None: #detached the tensor
                         home_score_j = home_score_j.cpu().numpy() if device != "cpu" else home_score_j.numpy()
                         home_score_j = int(home_score_j)
@@ -552,12 +563,12 @@ def UEID_simulation_match(train_df, data, model_name, model_path, model_config, 
                     #check if idx is a key in the simulation dictionary
                     if idx not in simulation.keys():
                         simulation[idx] = []
-                    simulation[idx].append([action_j, action_prob_j, delta_T_j, start_x_j, start_y_j]+[home_score_j, away_score_j])
+                    simulation[idx].append([action_j, action_prob_j, delta_T_j, start_x_j, start_y_j]+[team_j,home_score_j, away_score_j])
                     time[j] += delta_T_j
-                    print(f"Time: {time[j]}") if config['test'] else None
+                    print(f"Time: {time[j]}") if config['test'] and __name__ == "__main__" else None 
                     # # Check if the current action indicates termination
                     # if output[j, 0] == 3:
-                    if time[j] >= 30 and config['test']:
+                    if time[j] >= 10 and config['test']:
                         mask[j] = False
 
                     if time[j] >= simulation_time*60:
@@ -573,7 +584,7 @@ def UEID_simulation_match(train_df, data, model_name, model_path, model_config, 
                 if iteration >= max_iter:
                     output_i[0]=3
                 iteration += 1
-                print(f"Iteration: {iteration}") if config['test'] else None
+                print(f"Iteration: {iteration}") if config['test'] and __name__ == "__main__" else None
 
                 # # Update end_idx and tensors based on the mask
                 # end_idx = [end_idx[j] for j in range(len(end_idx)) if mask[j]]
@@ -755,7 +766,7 @@ def UEID_simulation_match(train_df, data, model_name, model_path, model_config, 
 
         # Convert the list of rows into a DataFrame
         columns = ['index', 'action', 'action_prob', 'delta_T', 'x', 'y']
-        columns += ['home_score', 'away_score'] if 'home_score' in config['features'] and 'away_score' in config['features'] else []
+        columns += ['team','home_score', 'away_score'] if 'home_score' in config['features'] and 'away_score' in config['features'] else []
         df = pd.DataFrame(rows, columns=columns)
         #set to 4 dp
         df = df.round(4)

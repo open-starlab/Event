@@ -18,6 +18,11 @@ from ..inference import FMS_inference as FMS_inference
 from ..inference import LEM_inference as LEM_inference
 from ..inference import UEID_inference as UEID_inference
 
+from ..application.heatmap import plot_heat_map
+from ..application.HPUS import cal_HPUS, plot_HPUS
+from ..application.poss_util import cal_poss_util, plot_poss_util_dist, plot_poss_util_plus_dist
+from ..application.result_sim import result_sim, plot_result
+
 import pdb
 
 class event_model_soccer:
@@ -117,6 +122,24 @@ class event_model_soccer:
             es_hota_df.to_csv(save_path+"ES_HOTA.csv",index=False)
             return df, timestep_eval_df, es_hota_df
 
+    def plot_heat_map(self, *args, **kwargs):
+        plot_heat_map(*args, **kwargs)
+    
+    def cal_HPUS(self, *args, **kwargs):
+        hpus = cal_HPUS(*args, **kwargs)
+        plot_HPUS(hpus, *args, **kwargs)
+        return hpus
+    
+    def cal_poss_util(self, *args, **kwargs):
+        pos_util = cal_poss_util(*args, **kwargs)
+        plot_poss_util_dist(pos_util, *args, **kwargs)
+        plot_poss_util_plus_dist(pos_util, *args, **kwargs)
+        return pos_util
+    
+    def result_sim(self, *args, **kwargs):
+        home_win_prob, away_win_prob, time_bin = result_sim(*args, **kwargs)
+        plot_result(home_win_prob, away_win_prob, time_bin, *args, **kwargs)
+        return home_win_prob, away_win_prob, time_bin
 
 if __name__ == '__main__':
     # #Test FMS

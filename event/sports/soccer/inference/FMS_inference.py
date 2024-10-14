@@ -433,14 +433,10 @@ def FMS_simulation_possession(train_df, data, model_name, model_path, model_conf
                                 else:
                                     away_score = 0                        
                         #update the append_tensor
-                        for j in range(config['num_actions']):
-                            if j == action:
-                                append_tensor[i,j] = 1
-                            else:
-                                append_tensor[i,j] = 0
-                        append_tensor[i,config['num_actions']] = delta_T
-                        append_tensor[i,config['num_actions']+1] = x
-                        append_tensor[i,config['num_actions']+2] = y
+                        append_tensor[i,0] = action
+                        append_tensor[i,1] = delta_T
+                        append_tensor[i,2] = x
+                        append_tensor[i,3] = y
                         if team_idx is not None:
                             append_tensor[i,team_idx] = team
                         if home_team_idx is not None:
@@ -644,6 +640,18 @@ def FMS_simulation_match(train_df, data, model_name, model_path, model_config, n
                     delta_T_prob_j = output_j[5]
                     start_x_prob_j = output_j[6]
                     start_y_prob_j = output_j[7]
+                    if 'team' in config['features']:
+                        team_idx = config['features'].index('team')
+                        team_j = input_seq[j,-1,team_idx]
+                        team_j = team_j.cpu().numpy().tolist() if device != "cpu" else team_j.numpy().tolist()
+                        team_j = int(team_j)
+                        action_last_j_idx = config['features'].index('action')
+                        action_last_j = input_seq[j,-1,action_last_j_idx]
+                        if action_last_j == 3:
+                            temp_team_j = team_list.copy()
+                            temp_team_j.remove(team_j)
+                            team_j = temp_team_j[0]
+                        print(action_last_j, team_j) if config['test'] else None
                     if 'home_score' in config['features'] and 'away_score' in config['features']:
                         home_score_idx = config['features'].index('home_score')
                         away_score_idx = config['features'].index('away_score')
@@ -662,7 +670,7 @@ def FMS_simulation_match(train_df, data, model_name, model_path, model_config, n
                     #check if idx is a key in the simulation dictionary
                     if idx not in simulation.keys():
                         simulation[idx] = []
-                    simulation[idx].append([action_j, action_prob_j, delta_T_j, delta_T_prob_j, start_x_j, start_x_prob_j, start_y_j, start_y_prob_j]+[home_score_j, away_score_j])
+                    simulation[idx].append([action_j, action_prob_j, delta_T_j, delta_T_prob_j, start_x_j, start_x_prob_j, start_y_j, start_y_prob_j]+[team_j,home_score_j, away_score_j])
                     time[j] += delta_T_j
                     print(f"Time: {time[j]}") if config['test'] else None
                     if time[j] >= 300 and config['test']:
@@ -821,14 +829,10 @@ def FMS_simulation_match(train_df, data, model_name, model_path, model_config, n
                                 else:
                                     away_score = 0                        
                         #update the append_tensor
-                        for j in range(config['num_actions']):
-                            if j == action:
-                                append_tensor[i,j] = 1
-                            else:
-                                append_tensor[i,j] = 0
-                        append_tensor[i,config['num_actions']] = delta_T
-                        append_tensor[i,config['num_actions']+1] = x
-                        append_tensor[i,config['num_actions']+2] = y
+                        append_tensor[i,0] = action
+                        append_tensor[i,1] = delta_T
+                        append_tensor[i,2] = x
+                        append_tensor[i,3] = y
                         if team_idx is not None:
                             append_tensor[i,team_idx] = int(team)
                         if home_team_idx is not None:
@@ -870,7 +874,7 @@ def FMS_simulation_match(train_df, data, model_name, model_path, model_config, n
 
         # Convert the list of rows into a DataFrame
         columns = ['index', 'action', 'action_prob', 'delta_T', 'delta_T_prob', 'x', 'x_prob', 'y', 'y_prob']
-        columns += ['home_score', 'away_score'] if 'home_score' in config['features'] and 'away_score' in config['features'] else []
+        columns += ['team','home_score', 'away_score'] if 'home_score' in config['features'] and 'away_score' in config['features'] else []
         df = pd.DataFrame(rows, columns=columns)
         #set to 4 dp
         df = df.round(4)

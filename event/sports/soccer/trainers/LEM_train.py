@@ -101,7 +101,7 @@ def LEM_action_train(model, train_loader, valid_loader, optimizer, device, epoch
         # Early stopping
         if epochs_no_improve >= patience:
             print(f"Early stopping triggered after {epoch + 1} epochs.")
-            model_state_dict = best_model
+            model_state_dict = best_model  if best_model else model.state_dict()
             epoch = best_epoch
             break
 
@@ -256,7 +256,7 @@ def LEM_train(model, train_loader, valid_loader, min_dict, max_dict, optimizer, 
         # Early stopping
         if epochs_no_improve >= patience:
             print(f"Early stopping triggered after {epoch + 1} epochs.")
-            model_state_dict = best_model
+            model_state_dict = best_model if best_model else model.state_dict()
             epoch = best_epoch
             break
 
