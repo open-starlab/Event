@@ -19,8 +19,8 @@ from ..inference import LEM_inference as LEM_inference
 from ..inference import UEID_inference as UEID_inference
 
 from ..application.heatmap import plot_heat_map
-from ..application.HPUS import cal_HPUS, plot_HPUS
-from ..application.poss_util import cal_poss_util, plot_poss_util_dist, plot_poss_util_plus_dist
+from ..application.HPUS import calculate_HPUS, plot_HPUS
+from ..application.poss_util import calculate_poss_util, plot_poss_util_dist, plot_poss_util_plus_dist
 from ..application.result_sim import result_sim, plot_result
 
 import pdb
@@ -125,25 +125,25 @@ class event_model_soccer:
     def plot_heat_map(self, *args, **kwargs):
         plot_heat_map(*args, **kwargs)
     
-    def cal_HPUS(self, data, shot_num=[6,8], cross_num=[4], num_actions=9, save_path=None, bins=20, **kwargs):
-        # Calculate possession utility using cal_poss_util
-        hpus = cal_poss_util(data, shot_num=shot_num, cross_num=cross_num, num_actions=num_actions)
-        
-        # Plot the possession utility distribution using plot_poss_util_dist
-        if save_path:
-            plot_poss_util_dist(hpus, save_path, bins=bins)
-        
-        # Return the calculated possession utility
-        return hpus
+    def cal_HPUS(self, data, shot_num=[6, 8], cross_num=[4], num_actions=9, save_path=None, match_id=None, plus=False, time_period=5):
+            # Calculate HPUS using the standalone function
+            hpus = calculate_HPUS(data, shot_num=shot_num, cross_num=cross_num, num_actions=num_actions)
+            
+            # Plot HPUS using the calculated data
+            if save_path:
+                plot_HPUS(data, hpus, save_path=save_path, match_id=match_id, plus=plus, time_period=time_period)
+            
+            # Return the calculated HPUS data
+            return hpus
     
-    def cal_poss_util(self, data, save_path = None, shot_num=[6, 8], cross_num=[4], num_actions=9):
+    def cal_poss_util(self, data, save_path = None, shot_num=[6, 8], cross_num=[4], num_actions=9,team=None):
         # Call the standalone cal_poss_util function and get the utility
-        pos_util = cal_poss_util(data, shot_num=shot_num, cross_num=cross_num, num_actions=num_actions)
+        pos_util = calculate_poss_util(data, shot_num=shot_num, cross_num=cross_num, num_actions=num_actions)
         
         # Plot the possession utility distribution
         if save_path:
-            plot_poss_util_dist(pos_util, save_path=save_path)
-            plot_poss_util_plus_dist(pos_util, save_path=save_path)
+            plot_poss_util_dist(pos_util, save_path=save_path, teams=team)
+            plot_poss_util_plus_dist(pos_util, save_path=save_path, teams=team)
             
         return pos_util
     

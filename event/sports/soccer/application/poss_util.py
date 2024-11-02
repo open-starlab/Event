@@ -1,14 +1,17 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.stats import norm
 import pdb
 
 #possUtil/HPUS/simulation(possession and full match)/momentum indicator/heatmap
 
-def cal_poss_util(data, shot_num=[6,8], cross_num=[4], num_actions=9):
+def calculate_poss_util(data_raw, shot_num=[6,8], cross_num=[4], num_actions=9):
     # Check if the input is a DataFrame
-    if not isinstance(data, pd.DataFrame):
-        data = pd.read_csv(data)
+    if not isinstance(data_raw, pd.DataFrame):
+        data = pd.read_csv(data_raw)
+    else:
+        data = data_raw.copy()
     
     # Map actions to integers
     action_dict = {'short_pass': 0, 'carry': 1, 'high_pass': 2, '_': 3, 'cross': 4, 
@@ -54,9 +57,9 @@ def cal_poss_util(data, shot_num=[6,8], cross_num=[4], num_actions=9):
     
     return poss_util
 
-def plot_poss_util_dist(poss_util, save_path, bins=20):
+def plot_poss_util_dist(poss_util, save_path, bins=20,teams=None):
     # Get the unique team IDs
-    teams = poss_util['team'].unique()
+    teams = poss_util['team'].unique() if teams is None else teams
     
     # Set up the figure
     plt.figure(figsize=(12, 8))
@@ -89,23 +92,30 @@ def plot_poss_util_dist(poss_util, save_path, bins=20):
     plt.savefig(save_path + "poss_util.png")
     plt.close()  # Close the plot to free memory
 
-def plot_poss_util_plus_dist(poss_util, save_path, bins = 20):
+def plot_poss_util_plus_dist(poss_util, save_path, bins = 20,teams=None):
     #for each team summarize the poss_util_prob (only positive value) per match_id
     # Get the unique team IDs
-    teams = poss_util['team'].unique()
+    teams = poss_util['team'].unique() if teams is None else teams
     poss_util_plus = poss_util[poss_util['poss_util_prob'] > 0]
     poss_util_plus = poss_util_plus.groupby(['team','match_id'],as_index=False).agg({'poss_util_prob':'sum'})
     # Set up the figure
     plt.figure(figsize=(12, 8))
     for team in teams:
         team_data = poss_util_plus[poss_util_plus['team'] == team]['poss_util_prob']
-        
         # Calculate the kernel density estimation using a histogram
-        density, bins = np.histogram(team_data, bins=bins, density=True)
-        bin_centers = 0.5 * (bins[1:] + bins[:-1])
-        
+        # density, bins = np.histogram(team_data, bins=bins, density=True)
+        # bin_centers = 0.5 * (bins[1:] + bins[:-1])
+        #calculate the mean value and standard deviation
+        mean = team_data.mean()
+        std_dev = team_data.std()
+        x = np.linspace(mean - 4*std_dev, mean + 4*std_dev, 1000)
+        y = norm.pdf(x, mean, std_dev)
+
+        # Plot the density curve with mean value and standard deviation
+        plt.plot(x, y, label=team)
+
         # Plot the density curve
-        plt.plot(bin_centers, density, label=team, linewidth=2)
+        # plt.plot(bin_centers, density, label=team, linewidth=2)
         # Plot the mean value
         plt.axvline(x=team_data.mean(), color='black', linestyle='--', linewidth=2)
 
@@ -127,7 +137,7 @@ if __name__ == "__main__":
     import os
     inference_data = os.getcwd()+"/test/inference/nmstpp/inference.csv"
     save_path = os.getcwd()+"/test/application/"
-    poss_util = cal_poss_util(inference_data)
+    poss_util = calculate_poss_util(inference_data)
     poss_util.to_csv(save_path+"poss_util.csv",index=False)
     plot_poss_util_dist(poss_util,save_path,bins=20)
     plot_poss_util_plus_dist(poss_util,save_path,bins=20)

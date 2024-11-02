@@ -3,10 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pdb
 
-def cal_HPUS(data, shot_num=[6,8], cross_num=[4], num_actions=9):
+def calculate_HPUS(data_raw, shot_num=[6,8], cross_num=[4], num_actions=9):
    # Check if the input is a DataFrame or CSV file path
-   if not isinstance(data, pd.DataFrame):
-      data = pd.read_csv(data)
+   if not isinstance(data_raw, pd.DataFrame):
+      data = pd.read_csv(data_raw)
+   else:
+      data = data_raw.copy()
+       
 
    # Map actions to integers and handle goals (action = 8 for goal)
    action_dict = {'short_pass': 0, 'carry': 1, 'high_pass': 2, '_': 3, 'cross': 4, 
@@ -60,9 +63,24 @@ def cal_HPUS(data, shot_num=[6,8], cross_num=[4], num_actions=9):
 
    return HPUS_value
 
-def plot_HPUS(hpus_data, save_path, match_id=None, plus=False, time_period=5):
+def plot_HPUS(data_raw, hpus_data, save_path, match_id=None, plus=False, time_period=5):
+    # Check if the input is a DataFrame or CSV file path
+    if not isinstance(data_raw, pd.DataFrame):
+        data = pd.read_csv(data_raw)
+    else:
+        data = data_raw.copy()
+    
     if match_id is None:
         match_id = hpus_data['match_id'].unique()[0]
+
+    data = data[data['match_id'] == match_id]
+    team = data.team.unique().tolist()
+    team_1 = data.iloc[0]['team']
+    team_1_home = data.iloc[0]['home_team']
+    team.remove(team_1)
+    team_dict = {team_1: team_1_home, team[0]: abs(team_1_home - 1)}
+    #fill nan values with 0
+    data.fillna(0, inplace=True)
 
     # Filter the data for the given match_id
     match_data = hpus_data[hpus_data['match_id'] == match_id]
@@ -73,27 +91,42 @@ def plot_HPUS(hpus_data, save_path, match_id=None, plus=False, time_period=5):
     
     # Create the plot
     plt.figure(figsize=(10, 6))
-
+    
     # Iterate over each unique team in the match
     for team in match_data['team'].unique():
         # Filter data for the specific team
         team_data = match_data[match_data['team'] == team].copy()
 
-        # Create 5-minute bins for the `seconds` column (intervals: 0-5, 5-10, ..., up to 110)
-        bins = list(range(0, 110 * 60 + 1, time_period * 60))
+        # Create 5-minute bins for the `seconds` column (intervals: 0-5, 5-10, ..., up to 90)
+        bins = list(range(0, 90 * 60 + 1, time_period * 60))
+        time_bins_labels = bins[:-1]
         team_data['time_bin'] = pd.cut(team_data['seconds'], bins=bins, labels=bins[:-1]).to_list()
 
         # Aggregate the HPUS values per 5-minute interval
         y = team_data.groupby('time_bin')['HPUS'].sum()
 
         # Check for NaN values and replace them with 0 if necessary
-        y = y.fillna(0)
+        y = y.reindex(time_bins_labels, fill_value=0)
+        y = y.shift(1).fillna(0)
 
         # Prepare x values as time in minutes
         x = [bin_val / 60 for bin_val in y.index.astype(int)]
 
         # Plot for each team
-        plt.plot(x, y, marker='o', linestyle='-', label=f'Team {team}')
+        home_away = 'Home' if team_dict[team] == 1 else 'Away'
+        color = '#ff7f0e' if team_dict[team] == 1 else '#1f77b4'
+        plt.plot(x, y, marker='o', linestyle='-', label=f'Team {team} ({home_away})', color=color)
+
+        #plot the line where the score changes
+        if home_away == 'Home':
+            # data['value_change'] = data['home_score']!=data['home_score'].shift()
+            data['value_change'] = (data['home_score'] != data['home_score'].shift()) & (data['home_score'].shift().notna())
+        elif home_away == 'Away':
+            data['value_change'] = (data['away_score'] != data['away_score'].shift()) & (data['away_score'].shift().notna())
+        changed = data[data['value_change']==True]
+        for i in range(len(changed)):
+            plt.axvline(x=changed.iloc[i].Minute, color=color, linestyle='--', linewidth=1)
+
 
     # Add titles and labels
     if not plus:
@@ -126,10 +159,10 @@ if __name__ == "__main__":
    import os
    inference_data = os.getcwd()+"/test/inference/nmstpp/inference.csv"
    save_path = os.getcwd()+"/test/application/"
-   hpus=cal_HPUS(inference_data)
+   hpus=calculate_HPUS(inference_data)
    hpus.to_csv(save_path+"HPUS.csv", index=False)
-   plot_HPUS(hpus,save_path)
-   plot_HPUS(hpus,save_path,plus=True)
+   plot_HPUS(inference_data,hpus,save_path)
+   plot_HPUS(inference_data,hpus,save_path,plus=True)
    print("HPUS and HPUS+ plots saved successfully.")
    pdb.set_trace()
 
