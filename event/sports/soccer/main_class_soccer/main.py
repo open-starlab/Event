@@ -125,15 +125,15 @@ class event_model_soccer:
     def plot_heat_map(self, *args, **kwargs):
         plot_heat_map(*args, **kwargs)
     
-    def cal_HPUS(self, *args, **kwargs):
-        hpus = cal_HPUS(*args, **kwargs)
-        plot_HPUS(hpus, *args, **kwargs)
+    def cal_HPUS(self, **kwargs):
+        hpus = cal_HPUS( **kwargs)
+        plot_HPUS(hpus, **kwargs)
         return hpus
     
-    def cal_poss_util(self, *args, **kwargs):
-        pos_util = cal_poss_util(*args, **kwargs)
-        plot_poss_util_dist(pos_util, *args, **kwargs)
-        plot_poss_util_plus_dist(pos_util, *args, **kwargs)
+    def cal_poss_util(self, **kwargs):
+        pos_util = cal_poss_util(**kwargs)
+        plot_poss_util_dist(pos_util, **kwargs)
+        plot_poss_util_plus_dist(pos_util, **kwargs)
         return pos_util
     
     def result_sim(self, *args, **kwargs):
