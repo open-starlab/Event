@@ -3,6 +3,7 @@ import numpy as np
 import matplotsoccer
 import matplotlib.pyplot as plt
 import scipy
+from scipy.ndimage import gaussian_filter1d
 import json
 import os
 import pdb  
@@ -33,17 +34,28 @@ def plot_heat_map(inference_data_path, min_max_dict_path, save_path, row_num):
     row_sums_x = inference_data[required_col_x].sum(axis=1)
     row_sums_y = inference_data[required_col_y].sum(axis=1)
     if not np.allclose(row_sums_x, 1):
-        exp_values = np.exp(inference_data[required_col_x])
-        inference_data[required_col_x] = exp_values.div(exp_values.sum(axis=1), axis=0)
+        # exp_values = np.exp(inference_data[required_col_x])
+        # inference_data[required_col_x] = exp_values.div(exp_values.sum(axis=1), axis=0)
+        #scale the probabilities to sum to 1
+        inference_data[required_col_x] = inference_data[required_col_x].div(row_sums_x, axis=0)
     if not np.allclose(row_sums_y, 1):
-        exp_values = np.exp(inference_data[required_col_y])
-        inference_data[required_col_y] = exp_values.div(exp_values.sum(axis=1), axis=0)
+        # exp_values = np.exp(inference_data[required_col_y])
+        # inference_data[required_col_y] = exp_values.div(exp_values.sum(axis=1), axis=0)
+        #scale the probabilities to sum to 1
+        inference_data[required_col_y] = inference_data[required_col_y].div(row_sums_y, axis=0)
 
+    
     #fill NaN values with 0
     inference_data.fillna(0, inplace=True)
 
     y_prob = inference_data[required_col_y].values[row_num]
     x_prob = inference_data[required_col_x].values[row_num]
+
+    # apply gaussian filter to smooth the heatmap
+    y_prob = gaussian_filter1d(y_prob, 1)
+    x_prob = gaussian_filter1d(x_prob, 1)
+
+    # pdb.set_trace()
 
     #based on the probabilities, sample the x and y coordinates proportionally
     x_data = np.random.choice(x_bins, 100000, p=x_prob)
@@ -66,5 +78,6 @@ if __name__ == "__main__":
     min_max_dict_path = os.getcwd() + "/test/model/LEM/out/optuna/20241009_010549/min_max_dict.json"
     inference_data_path = os.getcwd() + "/test/inference/LEM/inference.csv"
     save_path = os.getcwd()+"/test/application/"
+
     row_num = 100
     plot_heat_map(inference_data_path, min_max_dict_path, save_path, row_num)

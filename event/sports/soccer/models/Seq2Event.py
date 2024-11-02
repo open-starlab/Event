@@ -171,7 +171,7 @@ def train_Seq2Event(current_time, config, train_df, valid_df, seq_len, features,
     model_save_path = save_path + f"_model_{best_epoch}.pth"
     loss_save_path = save_path + "_loss.csv"
     hyperparameters_save_path = save_path + "hyperparameters.json"
-    flops_save_path = save_path + "_flops.txt"
+    flops_save_path = save_path + "_model_stats.txt"
 
     #save the min_dict and max_dict
     min_max_dict_path = config['save_path']+f"/out/{method}/{current_time}/min_max_dict.json"
