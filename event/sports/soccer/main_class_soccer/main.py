@@ -125,15 +125,26 @@ class event_model_soccer:
     def plot_heat_map(self, *args, **kwargs):
         plot_heat_map(*args, **kwargs)
     
-    def cal_HPUS(self, **kwargs):
-        hpus = cal_HPUS( **kwargs)
-        plot_HPUS(hpus, **kwargs)
+    def cal_HPUS(self, data, shot_num=[6,8], cross_num=[4], num_actions=9, save_path=None, bins=20, **kwargs):
+        # Calculate possession utility using cal_poss_util
+        hpus = cal_poss_util(data, shot_num=shot_num, cross_num=cross_num, num_actions=num_actions)
+        
+        # Plot the possession utility distribution using plot_poss_util_dist
+        if save_path:
+            plot_poss_util_dist(hpus, save_path, bins=bins)
+        
+        # Return the calculated possession utility
         return hpus
     
-    def cal_poss_util(self, **kwargs):
-        pos_util = cal_poss_util(**kwargs)
-        plot_poss_util_dist(pos_util, **kwargs)
-        plot_poss_util_plus_dist(pos_util, **kwargs)
+    def cal_poss_util(self, data, save_path = None, shot_num=[6, 8], cross_num=[4], num_actions=9):
+        # Call the standalone cal_poss_util function and get the utility
+        pos_util = cal_poss_util(data, shot_num=shot_num, cross_num=cross_num, num_actions=num_actions)
+        
+        # Plot the possession utility distribution
+        if save_path:
+            plot_poss_util_dist(pos_util, save_path=save_path)
+            plot_poss_util_plus_dist(pos_util, save_path=save_path)
+            
         return pos_util
     
     def result_sim(self, *args, **kwargs):
