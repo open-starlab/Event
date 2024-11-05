@@ -147,9 +147,10 @@ class event_model_soccer:
             
         return pos_util
     
-    def result_sim(self, *args, **kwargs):
-        home_win_prob, away_win_prob, time_bin = result_sim(*args, **kwargs)
-        plot_result(home_win_prob, away_win_prob, time_bin, *args, **kwargs)
+    #simulation of full match (TBD)
+    def result_sim(self, valid_path, model_path, model_config, min_max_dict_path, match_id=None, model="NMSTPP", n_sim=2, **kwargs):
+        home_win_prob, away_win_prob, time_bin = result_sim(valid_path, model_path, model_config, min_max_dict_path, match_id=match_id, model=model, n_sim=n_sim)
+        plot_result(home_win_prob, away_win_prob, time_bin, **kwargs)
         return home_win_prob, away_win_prob, time_bin
 
 if __name__ == '__main__':

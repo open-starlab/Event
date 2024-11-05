@@ -64,6 +64,9 @@ def UEID_preprocessing(df, min_dict_input=None, max_dict_input=None):
     df["delta_T"] = (df["delta_T"] - min_dict["delta_T"]) / (max_dict["delta_T"] - min_dict["delta_T"])
     #ensure the values are between 0 and 1
     df["delta_T"] = df["delta_T"].apply(lambda x: 0 if x < 0 else 1 if x > 1 else x)
+    #reset index
+    df.reset_index(drop=True, inplace=True)
+    
     
     return df, min_dict, max_dict
 

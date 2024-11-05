@@ -86,6 +86,7 @@ def LEM_inference(train_df, data, model_name, model_path, model_config, num_work
             gt_start_y_one_hot = one_hot_encode_from_continuous(gt[:,3], num_bins=config["start_y_bin"]).float()
             gt = torch.cat((gt_action_one_hot, gt_deltaT_one_hot, gt_start_x_one_hot, gt_start_y_one_hot), dim=1)
             output = model(input_seq)
+
             #check if output is in device
             if output.device != device:
                 output = output.to(device)
@@ -216,7 +217,7 @@ def LEM_simulation_possession(train_df, data, model_name, model_path, model_conf
     # Run inference
     with torch.no_grad():
         simulation = {}
-        for i, (input_seq, end_idx) in tqdm(enumerate(data_loader)):
+        for i, (input_seq, end_idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             #convert the end_idx to a list
             end_idx = end_idx.cpu().numpy().tolist() if device != "cpu" else end_idx.numpy().tolist()
 
@@ -329,7 +330,7 @@ def LEM_simulation_possession(train_df, data, model_name, model_path, model_conf
                     prev_action = prev_timestep[:,prev_action_idx:prev_action_idx+config['num_actions']]
                     prev_action = np.argmax(prev_action, axis=1)
                     #create a position dict for the position of the config['other_features'] in config['features']
-                    position_dict = {feature:config['features'].index(feature)+config['num_actions']-1+config['num_actions']-1+(len(config['features'])-1+config['num_actions'])*(seq_len-1) for feature in config['other_features']}
+                    position_dict = {feature:config['features'].index(feature)+config['num_actions']-1+(len(config['features'])-1+config['num_actions'])*(seq_len-1) for feature in config['other_features']}
                     #if action is 3, then update the 'team','home_team','success','seconds'
                     for i, output_i in enumerate(output):
                         if output_i[0] == 3:
@@ -457,27 +458,50 @@ def LEM_simulation_possession(train_df, data, model_name, model_path, model_conf
                         append_tensor[i,config['num_actions']] = delta_T
                         append_tensor[i,config['num_actions']+1] = x
                         append_tensor[i,config['num_actions']+2] = y
+
                         if team_idx is not None:
+                            if config['seq_len']>1:
+                                team_idx = position_dict.get('team')-prev_action_idx    
                             append_tensor[i,team_idx] = team
                         if home_team_idx is not None:
+                            if config['seq_len']>1:
+                                home_team_idx = position_dict.get('home_team')-prev_action_idx
                             append_tensor[i,home_team_idx] = home_team.astype(int)
                         if success_idx is not None: #TODO: adjust this if success is added as a target feature
+                            if config['seq_len']>1:
+                                success_idx = position_dict.get('success')-prev_action_idx
                             append_tensor[i,success_idx] = success
                         if seconds_idx is not None:
+                            if config['seq_len']>1:
+                                seconds_idx = position_dict.get('seconds')-prev_action_idx
                             append_tensor[i,seconds_idx] = seconds.astype(float)
                         if deltaX_idx is not None:
+                            if config['seq_len']>1:
+                                deltaX_idx = position_dict.get('deltaX')-prev_action_idx
                             append_tensor[i,deltaX_idx] = deltaX
                         if deltaY_idx is not None:
+                            if config['seq_len']>1:
+                                deltaY_idx = position_dict.get('deltaY')-prev_action_idx
                             append_tensor[i,deltaY_idx] = deltaY
                         if distance_idx is not None:
+                            if config['seq_len']>1:
+                                distance_idx = position_dict.get('distance')-prev_action_idx
                             append_tensor[i,distance_idx] = distance
                         if dist2goal_idx is not None:
+                            if config['seq_len']>1:
+                                dist2goal_idx = position_dict.get('dist2goal')-prev_action_idx
                             append_tensor[i,dist2goal_idx] = dist2goal
                         if angle2goal_idx is not None:
+                            if config['seq_len']>1:
+                                angle2goal_idx = position_dict.get('angle2goal')-prev_action_idx
                             append_tensor[i,angle2goal_idx] = angle2goal
                         if home_score_idx is not None:
+                            if config['seq_len']>1:
+                                home_score_idx = position_dict.get('home_score')-prev_action_idx
                             append_tensor[i,home_score_idx] = home_score
                         if away_score_idx is not None:
+                            if config['seq_len']>1:
+                                away_score_idx = position_dict.get('away_score')-prev_action_idx
                             append_tensor[i,away_score_idx] = away_score                    
                     append_tensor = append_tensor.to(device).unsqueeze(1)
                     if config['seq_len']==1:
@@ -517,7 +541,7 @@ def LEM_simulation_match(train_df, data, model_name, model_path, model_config, n
         # Load the training configuration 
     with open(model_config, "r") as f:
         config = json.load(f)
-    
+
     #check if train_df and data are paths or dataframes
     if train_df is not None and train_df != "None":
         if not isinstance(train_df, pd.DataFrame):
@@ -574,6 +598,7 @@ def LEM_simulation_match(train_df, data, model_name, model_path, model_config, n
             start_idx = match_data[(match_data['Period'] == simulation_period) & (match_data['Minute'] == simulation_minute+1)].index[0]
         #append the first and the following seq_len-1 rows to the match_simulation_data
         match_simulation_data.append(match_data.iloc[start_idx:start_idx+seq_len+1])
+
 
     #convert the match_simulation_data to a dataframe
     match_simulation_data = pd.concat(match_simulation_data)
@@ -959,6 +984,8 @@ def simulation_evaluation(simulation_df, ground_truth_df):
     #drop the game_over and period_over rows
     ground_truth_df = ground_truth_df[ground_truth_df["action"] != "game_over"]
     ground_truth_df = ground_truth_df[ground_truth_df["action"] != "period_over"]
+    #reset the index
+    ground_truth_df = ground_truth_df.reset_index(drop=True)
 
     #get the unique indexes
     unique_indexes = simulation_df['index'].unique()
@@ -982,7 +1009,7 @@ def simulation_evaluation(simulation_df, ground_truth_df):
             ground_truth_possession = ground_truth_df[(ground_truth_df['poss_id'] == poss_id) & (ground_truth_df['match_id'] == match_id)]
             #drop the row with index less than the indx
             ground_truth_possession = ground_truth_possession[ground_truth_possession.index >= idx]
-            
+    
             #evaluate the simulation per timestep
             for step_i, (_, row) in enumerate(sim_poss.iterrows()):
                 #check if the simulation timestep exceed the ground truth timestep
@@ -1042,7 +1069,7 @@ def simulation_evaluation(simulation_df, ground_truth_df):
 
     return timestep_eval_df, es_hota_df
 
-def ES_HOTA_cal(sim_poss,ground_truth_possession,tau_t=5,tau_l=5):
+def ES_HOTA_cal(sim_poss,ground_truth_possession,tau_t=2.76,tau_l=39.23):
     sim_list = []
     ES_HOTA_list = []
     for i in range(max(len(sim_poss),len(ground_truth_possession))):

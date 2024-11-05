@@ -67,16 +67,17 @@ def plot_poss_util_dist(poss_util, save_path, bins=20,teams=None):
     # Plot a density curve for each team
     for team in teams:
         team_data = poss_util[poss_util['team'] == team]['poss_util_prob']
-        
-        # Calculate the kernel density estimation using a histogram
-        density, bins = np.histogram(team_data, bins=bins, density=True)
-        bin_centers = 0.5 * (bins[1:] + bins[:-1])
+
+        mean = team_data.mean()
+        std_dev = team_data.std()
+        x = np.linspace(mean - 4*std_dev, mean + 4*std_dev, 1000)
+        y = norm.pdf(x, mean, std_dev)
         
         # Plot the density curve
-        plt.plot(bin_centers, density, label=team, linewidth=2)
+        plt.plot(x, y, label=team)
 
     # Set plot labels and title with increased font size
-    plt.xlabel('Poss-Util Probability', fontsize=18)  # Increased to 16
+    plt.xlabel('Poss-Util per match', fontsize=18)  # Increased to 16
     plt.ylabel('Density', fontsize=18)  # Increased to 16
     plt.title('Poss-Util', fontsize=18)  # Increased to 18
     
@@ -102,9 +103,7 @@ def plot_poss_util_plus_dist(poss_util, save_path, bins = 20,teams=None):
     plt.figure(figsize=(12, 8))
     for team in teams:
         team_data = poss_util_plus[poss_util_plus['team'] == team]['poss_util_prob']
-        # Calculate the kernel density estimation using a histogram
-        # density, bins = np.histogram(team_data, bins=bins, density=True)
-        # bin_centers = 0.5 * (bins[1:] + bins[:-1])
+
         #calculate the mean value and standard deviation
         mean = team_data.mean()
         std_dev = team_data.std()
@@ -114,13 +113,11 @@ def plot_poss_util_plus_dist(poss_util, save_path, bins = 20,teams=None):
         # Plot the density curve with mean value and standard deviation
         plt.plot(x, y, label=team)
 
-        # Plot the density curve
-        # plt.plot(bin_centers, density, label=team, linewidth=2)
         # Plot the mean value
         plt.axvline(x=team_data.mean(), color='black', linestyle='--', linewidth=2)
 
     # Set plot labels and title with increased font size
-    plt.xlabel('Poss-Util+ per Match', fontsize=18)  # Increased to 16
+    plt.xlabel('Poss-Util+', fontsize=18)  # Increased to 16
     plt.ylabel('Density', fontsize=18)  # Increased to 16
     plt.title('Poss-Util+', fontsize=18)  # Increased to 18
     # Increase font size for tick labels

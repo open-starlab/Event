@@ -63,6 +63,7 @@ class UEID_Simulation_loader(Dataset):
                 self.df.loc[i, "Period"] == self.df.loc[i + self.seq_len, "Period"]):
                 self.valid_indices.append(i)
         
+
     def __len__(self) -> int:
         return len(self.valid_indices)
     

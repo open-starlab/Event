@@ -27,10 +27,11 @@ def result_sim(valid_path,model_path,model_config,min_max_dict_path,match_id=Non
         temp_away_win_prob = []
         for i in range(n_sim):
             try:
-                df = simulation_function(None, valid_path, model, model_path, model_config,min_max_dict_path=min_max_dict_path, random_selection=True, max_iter=20,simulation_time=90-simulation_time,match_id=match_id)
+                df = simulation_function(None, valid_path, model, model_path, model_config,min_max_dict_path=min_max_dict_path, random_selection=True, max_iter=26,simulation_time=90-simulation_time,match_id=match_id)
                 home_score = df["home_score"].iloc[-1]
                 away_score = df["away_score"].iloc[-1]
             except:
+                pdb.set_trace()
                 print("Simulation failed for time bin: ",simulation_time)
                 home_score = 0
                 away_score = 0

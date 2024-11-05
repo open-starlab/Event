@@ -34,13 +34,9 @@ def plot_heat_map(inference_data_path, min_max_dict_path, save_path, row_num):
     row_sums_x = inference_data[required_col_x].sum(axis=1)
     row_sums_y = inference_data[required_col_y].sum(axis=1)
     if not np.allclose(row_sums_x, 1):
-        # exp_values = np.exp(inference_data[required_col_x])
-        # inference_data[required_col_x] = exp_values.div(exp_values.sum(axis=1), axis=0)
         #scale the probabilities to sum to 1
         inference_data[required_col_x] = inference_data[required_col_x].div(row_sums_x, axis=0)
     if not np.allclose(row_sums_y, 1):
-        # exp_values = np.exp(inference_data[required_col_y])
-        # inference_data[required_col_y] = exp_values.div(exp_values.sum(axis=1), axis=0)
         #scale the probabilities to sum to 1
         inference_data[required_col_y] = inference_data[required_col_y].div(row_sums_y, axis=0)
 
@@ -60,12 +56,6 @@ def plot_heat_map(inference_data_path, min_max_dict_path, save_path, row_num):
     #based on the probabilities, sample the x and y coordinates proportionally
     x_data = np.random.choice(x_bins, 100000, p=x_prob)
     y_data = np.random.choice(y_bins, 100000, p=y_prob)
-
-    # matplotsoccer.field("green",figsize=8, show=False)
-    # plt.scatter(x_data, y_data, s=1, c="red")
-    # plt.axis("on")
-    # plt.savefig(save_path+"sc_plot.png")
-    # plt.close()
 
     hm = matplotsoccer.count( pd.Series(x_data), pd.Series(y_data),n=101,m=101) # Construct a 25x25 heatmap from x,y-coordinates
     hm = scipy.ndimage.gaussian_filter(hm,1) # blur the heatmap

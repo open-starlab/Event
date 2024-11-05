@@ -71,7 +71,7 @@ def UEID_inference(train_df, data, model_name, model_path, model_config, num_wor
     with torch.no_grad():
         predicted = []
         end_idx_list = []
-        for i, (input_seq, gt, end_idx) in tqdm(enumerate(data_loader)):
+        for i, (input_seq, gt, end_idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             input_seq, gt = input_seq.to(device), gt.to(device)
             output = model(input_seq)
             #check if output is in device
