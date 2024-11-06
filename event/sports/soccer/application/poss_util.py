@@ -77,7 +77,7 @@ def plot_poss_util_dist(poss_util, save_path, bins=20,teams=None):
         plt.plot(x, y, label=team)
 
     # Set plot labels and title with increased font size
-    plt.xlabel('Poss-Util per match', fontsize=18)  # Increased to 16
+    plt.xlabel('Poss-Util', fontsize=18)  # Increased to 16
     plt.ylabel('Density', fontsize=18)  # Increased to 16
     plt.title('Poss-Util', fontsize=18)  # Increased to 18
     
