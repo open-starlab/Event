@@ -68,11 +68,11 @@ def LEM_inference(train_df, data, model_name, model_path, model_config, num_work
     
     # Run inference
     total_loss = 0
-    total_loss_components = [0]*5
+    total_loss_components = [0]*6
     with torch.no_grad():
         predicted = []
         end_idx_list = []
-        for i, (input_seq, gt, end_idx) in tqdm(enumerate(data_loader)):
+        for i, (input_seq, gt, end_idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             input_seq, gt = input_seq.to(device), gt.to(device)
             num_action=config["num_actions"] if config is not None and config !="None" else 9
             inputs_one_hot = torch.nn.functional.one_hot(input_seq[:,:,0].long(), num_classes=num_action).float()
@@ -107,7 +107,7 @@ def LEM_inference(train_df, data, model_name, model_path, model_config, num_work
         average_loss_components = [total_loss_components[j] / len(data_loader) for j in range(len(loss_components))]
 
     #save the loss_df
-    columns= ['train_loss', 'BCEL_continuous', 'MAE_deltaT', 'MAE_start_x', 'MAE_start_y']
+    columns= ['train_loss', 'BCEL_continuous','ACC_action', 'F1_action', 'MAE_deltaT', 'MAE_start_x', 'MAE_start_y']
     loss_df = pd.DataFrame([[average_loss]+average_loss_components], columns=columns)
     loss_df = loss_df.round(4)
         
@@ -615,7 +615,7 @@ def LEM_simulation_match(train_df, data, model_name, model_path, model_config, n
     # Run inference
     with torch.no_grad():
         simulation = {}
-        for i, (input_seq, end_idx) in tqdm(enumerate(data_loader)):
+        for i, (input_seq, end_idx) in tqdm(enumerate(data_loader), total=len(data_loader)):
             #convert the end_idx to a list
             end_idx = end_idx.cpu().numpy().tolist() if device != "cpu" else end_idx.numpy().tolist()
             for idx in end_idx:
@@ -1028,10 +1028,8 @@ def simulation_evaluation(simulation_df, ground_truth_df):
                 timestep_eval[step_i]["MAE_delta_T"].append(MAE_delta_T)
                 timestep_eval[step_i]["MAE_start_x"].append(MAE_start_x)
                 timestep_eval[step_i]["MAE_start_y"].append(MAE_start_y)
-                    
             #ES-HOTA
             es_hota_list.append([idx]+ES_HOTA_cal(sim_poss,ground_truth_possession))
-
         except:
             error_row.append([idx])
             continue
@@ -1130,8 +1128,8 @@ if __name__ == "__main__":
     #     loss_df.to_csv(save_path+"loss.csv",index=False)
     # df = LEM_simulation_possession(train_path, valid_path, "LEM", model_path, model_config, random_selection=True, max_iter=20)
     # df.to_csv(save_path+"simulation.csv",index=False)
-    df_90 = LEM_simulation_match(train_path, valid_path, "LEM", model_path, model_config, random_selection=True, max_iter=20, min_max_dict_path=min_max_dict_path, simulation_time=90)
-    df_90.to_csv(save_path+"simulation_90.csv",index=False)
+    # df_90 = LEM_simulation_match(train_path, valid_path, "LEM", model_path, model_config, random_selection=True, max_iter=20, min_max_dict_path=min_max_dict_path, simulation_time=90)
+    # df_90.to_csv(save_path+"simulation_90.csv",index=False)
 
     # testing evaluation
     # simulation_df_path = os.getcwd()+"/test/inference/LEM/simulation.csv"
@@ -1140,4 +1138,11 @@ if __name__ == "__main__":
     # timestep_eval_df.to_csv(save_path+"timestep_eval.csv",index=False)
     # es_hota_df.to_csv(save_path+"ES_HOTA.csv",index=False)
     # pdb.set_trace()
+
+    #testing eval
+    simulation_df_path ='/home/c_yeung/workspace6/python/openstarlab/Event_Pretrain/application/simulation/LEM_3_fixed/run_1/simulation.csv'
+    ground_truth_df_path = os.getcwd()+"/test/dataset/csv/valid.csv"
+    timestep_eval_df,es_hota_df = simulation_evaluation(simulation_df_path, ground_truth_df_path)
+    print(timestep_eval_df)
+    
     print('___________done______________')

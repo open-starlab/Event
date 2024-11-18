@@ -74,12 +74,16 @@ def LEM_cost_function(gt, pred,min_dict=None, max_dict=None, device="None",confi
         start_y = start_y * ( torch.tensor(max_dict["start_y"], device=device) - torch.tensor(min_dict["start_y"], device=device)) + torch.tensor(min_dict["start_y"], device=device)
         
         #ignore in backpropagation
+        ACC_action = torch.mean((torch.argmax(pred_action,1)==torch.argmax(gt_action,1)).float()).detach()
+        f1_action = calculate_f1_score(torch.argmax(gt_action,1),torch.argmax(pred_action,1),num_actions).detach()
         AE_deltaT = torch.mean(torch.abs(deltaT_pred-deltaT)).detach()
         AE_start_x = torch.mean(torch.abs(start_x_pred-start_x)).detach()
         AE_start_y = torch.mean(torch.abs(start_y_pred-start_y)).detach()
     else:
+        ACC_action = torch.tensor(-1, device=device)
+        f1_action = torch.tensor(-1, device=device)
         AE_deltaT = torch.tensor(-1, device=device)
         AE_start_x = torch.tensor(-1, device=device)
         AE_start_y = torch.tensor(-1, device=device)
 
-    return BCEL_continuous, [BCEL_continuous,AE_deltaT,AE_start_x,AE_start_y]
+    return BCEL_continuous, [BCEL_continuous,ACC_action,f1_action,AE_deltaT,AE_start_x,AE_start_y]

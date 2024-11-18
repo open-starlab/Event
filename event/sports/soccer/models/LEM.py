@@ -49,6 +49,9 @@ class LEM(nn.Module):
         self.action_model=LEM_action(input_size_action, hidden_size_action, output_size_action, activation_action)
         #load the weights of the action model
         self.action_model.load_state_dict(torch.load(pth_action, weights_only=True))
+        #forzen the weights of the action model
+        for param in self.action_model.parameters():
+            param.requires_grad = False
 
     def init_weights(self):
         for m in self.model.modules():
@@ -125,10 +128,10 @@ def train_LEM(current_time, config, train_df, valid_df, seq_len, features, epoch
     model_state_dict, best_epoch, train_losses, valid_losses, train_loss_components, valid_loss_components, model_stats = LEM_train(model, train_loader, valid_loader, min_dict, max_dict, optimizer, device, epochs, print_freq, patience,config=config)
 
     #create one csv file for the training and validation losses
-    columns = ['train_loss', 'BCEL_continuous', 'MAE_deltaT', 'MAE_start_x', 'MAE_start_y',
-                'valid_loss', 'BCEL_continuous_v', 'AE_deltaT_v', 'MAE_start_x_v', 'MAE_start_y_v']
-    data = [train_losses, np.array(train_loss_components)[:,0], np.array(train_loss_components)[:,1], np.array(train_loss_components)[:,2], np.array(train_loss_components)[:,3],
-            valid_losses, np.array(valid_loss_components)[:,0], np.array(valid_loss_components)[:,1], np.array(valid_loss_components)[:,2], np.array(valid_loss_components)[:,3]]
+    columns = ['train_loss', 'BCEL_continuous', 'ACC_action','F1_action','MAE_deltaT', 'MAE_start_x', 'MAE_start_y',
+                'valid_loss', 'BCEL_continuous_v', 'ACC_action_v','F1_action_v', 'AE_deltaT_v', 'MAE_start_x_v', 'MAE_start_y_v']
+    data = [train_losses, np.array(train_loss_components)[:,0], np.array(train_loss_components)[:,1], np.array(train_loss_components)[:,2], np.array(train_loss_components)[:,3], np.array(train_loss_components)[:,4], np.array(train_loss_components)[:,5],
+            valid_losses, np.array(valid_loss_components)[:,0], np.array(valid_loss_components)[:,1], np.array(valid_loss_components)[:,2], np.array(valid_loss_components)[:,3], np.array(valid_loss_components)[:,4], np.array(valid_loss_components)[:,5]]
     data = np.array(data).T
     loss_df = pd.DataFrame(data, columns=columns)
     #round the loss_df to 4 decimal places

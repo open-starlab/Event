@@ -77,15 +77,15 @@ def plot_poss_util_dist(poss_util, save_path, bins=20,teams=None):
         plt.plot(x, y, label=team)
 
     # Set plot labels and title with increased font size
-    plt.xlabel('Poss-Util', fontsize=18)  # Increased to 16
-    plt.ylabel('Density', fontsize=18)  # Increased to 16
-    plt.title('Poss-Util', fontsize=18)  # Increased to 18
+    plt.xlabel('Poss-Util', fontsize=28)  # Increased to 16
+    plt.ylabel('Density', fontsize=28)  # Increased to 16
+    plt.title('Poss-Util', fontsize=28)  # Increased to 18
     
     # Increase font size for tick labels
-    plt.tick_params(axis='both', labelsize=16)  # Set font size for x and y tick labels
+    plt.tick_params(axis='both', labelsize=24)  # Set font size for x and y tick labels
 
     # Add legend with increased font size
-    plt.legend(title='Team ID', fontsize=16)  # Increased to 14
+    plt.legend(title='Team ID', fontsize=24)  # Increased to 14
     
     # Display the plot and save it
     plt.grid(True, linestyle='--', alpha=0.7)
@@ -117,13 +117,13 @@ def plot_poss_util_plus_dist(poss_util, save_path, bins = 20,teams=None):
         plt.axvline(x=team_data.mean(), color='black', linestyle='--', linewidth=2)
 
     # Set plot labels and title with increased font size
-    plt.xlabel('Poss-Util+', fontsize=18)  # Increased to 16
-    plt.ylabel('Density', fontsize=18)  # Increased to 16
-    plt.title('Poss-Util+', fontsize=18)  # Increased to 18
+    plt.xlabel('Poss-Util+', fontsize=28)  # Increased to 16
+    plt.ylabel('Density', fontsize=28)  # Increased to 16
+    plt.title('Poss-Util+', fontsize=28)  # Increased to 18
     # Increase font size for tick labels
-    plt.tick_params(axis='both', labelsize=16)  # Set font size for x and y tick labels
+    plt.tick_params(axis='both', labelsize=24)  # Set font size for x and y tick labels
     # Add legend with increased font size
-    plt.legend(title='Team ID', fontsize=16)  # Increased to 14
+    plt.legend(title='Team ID', fontsize=24)  # Increased to 14
     # Display the plot and save it
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.tight_layout()

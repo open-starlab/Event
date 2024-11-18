@@ -153,7 +153,7 @@ def LEM_epoch_function(model, dataloader, min_dict, max_dict, optimizer, device,
         model.eval()
 
     total_loss = 0
-    total_loss_components = [0]*4
+    total_loss_components = [0]*6
     total_batches = len(dataloader)
     
     for i, (inputs, gt, _) in enumerate(dataloader):
@@ -192,8 +192,8 @@ def LEM_epoch_function(model, dataloader, min_dict, max_dict, optimizer, device,
             average_loss_components = [total_loss_components[j] / (i + 1) for j in range(len(loss_components))]
             
             print(f"Batch [{i + 1}/{total_batches}] | Loss: {average_loss:.4f} | "
-                    f"BCEL_continuous: {average_loss_components[0]:.4f} | AE_deltaT: {average_loss_components[1]:.4f} | "
-                    f"AE_start_x: {average_loss_components[2]:.4f} | AE_start_y: {average_loss_components[3]:.4f}" 
+                    f"BCEL_continuous: {average_loss_components[0]:.4f}| ACC_action: {average_loss_components[1]:.4f}| F1_action: {average_loss_components[2]:.4f}  | AE_deltaT: {average_loss_components[3]:.4f} | "
+                    f"AE_start_x: {average_loss_components[4]:.4f} | AE_start_y: {average_loss_components[5]:.4f}" 
                     )
 
     average_loss = total_loss / total_batches
