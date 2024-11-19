@@ -1039,6 +1039,7 @@ def simulation_evaluation(simulation_df, ground_truth_df):
     for time_step, metrics in timestep_eval.items():
         mean_entry = {
             'time_step': time_step,
+            'count': len(metrics['ACC_action']),
             'ACC_action': sum(metrics['ACC_action']) / len(metrics['ACC_action']),
             'MAE_delta_T': sum(metrics['MAE_delta_T']) / len(metrics['MAE_delta_T']),
             'MAE_start_x': sum(metrics['MAE_start_x']) / len(metrics['MAE_start_x']),
@@ -1143,6 +1144,6 @@ if __name__ == "__main__":
     simulation_df_path ='/home/c_yeung/workspace6/python/openstarlab/Event_Pretrain/application/simulation/LEM_3_fixed/run_1/simulation.csv'
     ground_truth_df_path = os.getcwd()+"/test/dataset/csv/valid.csv"
     timestep_eval_df,es_hota_df = simulation_evaluation(simulation_df_path, ground_truth_df_path)
-    print(timestep_eval_df)
+    timestep_eval_df.to_csv("/home/c_yeung/workspace6/python/openstarlab/Event_Pretrain/application/simulation/LEM_3_fixed/run_1/timestep_eval.csv",index=False)
     
     print('___________done______________')

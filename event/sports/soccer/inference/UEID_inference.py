@@ -907,6 +907,7 @@ def simulation_evaluation(simulation_df, ground_truth_df):
     for time_step, metrics in timestep_eval.items():
         mean_entry = {
             'time_step': time_step,
+            'count': len(metrics['ACC_action']),
             'ACC_action': sum(metrics['ACC_action']) / len(metrics['ACC_action']),
             'MAE_delta_T': sum(metrics['MAE_delta_T']) / len(metrics['MAE_delta_T']),
             'MAE_start_x': sum(metrics['MAE_start_x']) / len(metrics['MAE_start_x']),
