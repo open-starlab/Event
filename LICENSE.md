@@ -207,5 +207,5 @@ Here, we list the algorithms with licenses other than Apache 2.0. Users should b
 | Algorithm |                                                                            Files                                                                            |     License      |
 | :-------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------: |
 |  LEM   | [Event/event/sports/soccer/models/LEM.py](https://github.com/open-starlab/Event/blob/main/event/sports/soccer/models/LEM.py) | No License |
-|  LEM_action   | [Event/event/sports/soccer/models/LEM.py](https://github.com/open-starlab/Event/blob/main/event/sports/soccer/models/LEM.py) | No License |
+|  LEM_action   | [Event/event/sports/soccer/models/LEM_action.py](https://github.com/open-starlab/Event/blob/main/event/sports/soccer/models/LEM_action.py) | No License |
 |  BasicTransformer   | [Event/event/sports/soccer/models/FMS.py](https://github.com/open-starlab/Event/blob/main/event/sports/soccer/models/FMS.py) | No License |
