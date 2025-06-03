@@ -63,7 +63,7 @@ def calculate_HPUS(data_raw, shot_num=[6,8], cross_num=[4], num_actions=9):
 
    return HPUS_value
 
-def plot_HPUS(data_raw, hpus_data, save_path, match_id=None, plus=False, time_period=5):
+def plot_HPUS(data_raw, hpus_data, save_path, match_id=None, plus=False, time_period=5, swap_home_away=False):
     # Check if the input is a DataFrame or CSV file path
     if not isinstance(data_raw, pd.DataFrame):
         data = pd.read_csv(data_raw)
@@ -115,6 +115,9 @@ def plot_HPUS(data_raw, hpus_data, save_path, match_id=None, plus=False, time_pe
         # Plot for each team
         home_away = 'Home' if team_dict[team] == 1 else 'Away'
         color = '#ff7f0e' if team_dict[team] == 1 else '#1f77b4'
+        if swap_home_away:
+            home_away = 'Away' if home_away == 'Home' else 'Home'
+            color = '#1f77b4' if team_dict[team] == 1 else '#ff7f0e'
         plt.plot(x, y, marker='o', linestyle='-', label=f'Team {team} ({home_away})', color=color)
 
         #plot the line where the score changes
