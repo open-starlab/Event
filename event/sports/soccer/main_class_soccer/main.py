@@ -75,7 +75,7 @@ class event_model_soccer:
 
         #check if the paths are provided
         if train_path is None:
-            if 'train_path' in config_json:
+            if 'train_path' in config_json and min_max_dict_path is None:
                 train_path = config_json['train_path']
             elif min_max_dict_path is not None:
                 valid_path = self.config['valid_path']
