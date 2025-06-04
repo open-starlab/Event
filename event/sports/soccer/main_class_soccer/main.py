@@ -125,14 +125,14 @@ class event_model_soccer:
     def plot_heat_map(self, *args, **kwargs):
         plot_heat_map(*args, **kwargs)
     
-    def cal_HPUS(self, data, shot_num=[6, 8], cross_num=[4], num_actions=9, save_path=None, match_id=None, plus=False, time_period=5):
+    def cal_HPUS(self, data, shot_num=[6, 8], cross_num=[4], num_actions=9, save_path=None, match_id=None, plus=False, time_period=5, swap_home_away=False):
             # Calculate HPUS using the standalone function
             hpus = calculate_HPUS(data, shot_num=shot_num, cross_num=cross_num, num_actions=num_actions)
             
             # Plot HPUS using the calculated data
             if save_path:
-                plot_HPUS(data, hpus, save_path=save_path, match_id=match_id, plus=plus, time_period=time_period)
-            
+                plot_HPUS(data, hpus, save_path=save_path, match_id=match_id, plus=plus, time_period=time_period, swap_home_away=swap_home_away)
+
             # Return the calculated HPUS data
             return hpus
     
