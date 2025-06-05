@@ -12,6 +12,8 @@ This package is continuously evolving to support future OpenSTARLab projects. If
 <details>
 <summary><strong>Soccer Event Modeling</strong></summary>
 
+[![Colab](https://img.shields.io/badge/Colab-Notebook-yellow?logo=google-colab)](https://colab.research.google.com/drive/1-YQoHtA-lQZtogT8JpmmxFaS-VnjopYr?usp=sharing)
+
 ### Table: Comparison of model performance on soccer event prediction
 
 **Note**: Arrows indicate whether a higher (↑) or lower (↓) value is better.   
