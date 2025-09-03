@@ -37,8 +37,14 @@ class event_model_soccer:
         else:
             self.optuna = False
 
-
     def train(self):
+        if self.config.get('test', False):
+            print(
+                "⚠️ Running in test mode.\n"
+                "This is only for debugging purposes.\n"
+                "Hyperparameters and config will be fixed with a predefined set."
+            )
+
         if self.optuna:
             if self.model_name == 'FMS':
                 FMS_main_optuna(self.config)
